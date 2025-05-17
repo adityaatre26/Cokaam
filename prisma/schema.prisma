@@ -1,0 +1,77 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  UserId   String  @id @default(uuid())
+  email    String  @unique
+  username String? @unique
+
+  ownedProjects Project[]     @relation("ProjectOwner")
+  memberships   Memberships[]
+  createdTasks  Task[]        @relation("TaskCreator")
+  assignedTasks Task[]        @relation("TaskAssignee")
+}
+
+model Project {
+  ProjectId   String        @id @default(uuid())
+  name        String
+  ownerId     String
+  updatedAt   DateTime      @updatedAt
+  owner       User          @relation("ProjectOwner", fields: [ownerId], references: [UserId], onDelete: Cascade)
+  memberships Memberships[]
+  githubRepo  Repos?
+  task        Task[]
+}
+
+enum Role {
+  OWNER
+  MEMBER
+}
+
+model Memberships {
+  id        String @id @default(uuid())
+  projectId String
+  userId    String
+  role      Role   @default(MEMBER)
+
+  project Project @relation(fields: [projectId], references: [ProjectId], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [UserId], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+}
+
+model Repos {
+  id        String  @id @default(uuid())
+  repoName  String
+  repoOwner String
+  repoUrl   String
+  projectId String  @unique
+  project   Project @relation(fields: [projectId], references: [ProjectId], onDelete: Cascade)
+}
+
+model Task {
+  TaskId     String   @id @default(uuid())
+  title      String
+  status     String   @default("TODO")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  projectId  String
+  creatorId  String
+  assigneeId String?
+
+  project  Project @relation(fields: [projectId], references: [ProjectId], onDelete: Cascade)
+  creator  User    @relation("TaskCreator", fields: [creatorId], references: [UserId], onDelete: Cascade)
+  assignee User?   @relation("TaskAssignee", fields: [assigneeId], references: [UserId], onDelete: Cascade)
+}
