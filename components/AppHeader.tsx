@@ -1,18 +1,20 @@
 "use client";
 
-import { signIn, useSession } from "next-auth/react";
+import { signIn, signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 function AppHeader() {
-  const session = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function redirectUser() {
-      if (session.data?.user?.email) {
+      if (status === "authenticated" && session?.user?.email) {
+        console.log("Header session data:", session);
         try {
-          const email = session.data.user.email;
+          const email = session.user.email;
           const response = await fetch(`/api/getUser?email=${email}`);
 
           if (response.ok) {
@@ -23,23 +25,34 @@ function AppHeader() {
               console.error("User not found");
             }
           } else {
-            signIn();
+            console.error("Error fetching user");
           }
         } catch (error) {
           console.error("Error fetching user in client:", error);
+        } finally {
+          setIsLoading(false);
         }
+      } else if (status === "unauthenticated") {
+        setIsLoading(false);
       }
     }
 
     redirectUser();
-  }, [session, router]);
+  }, [session, status, router]);
 
-  if (session.data?.user) {
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (status === "authenticated" && session?.user) {
     return (
       <>
-        <h1>Welcome {session.data.user.name}</h1>
-        <p>Email: {session.data.user.email}</p>
-        <button onClick={() => signIn()}>Sign out</button>
+        <h1>Welcome {session.user.name}</h1>
+        <p>Email: {session.user.email}</p>
+        {session.user.accessToken && (
+          <p>GitHub Auth: {session.user.accessToken.substring(0, 10)}...</p>
+        )}
+        <button onClick={() => signOut()}>Sign out</button>
       </>
     );
   }
@@ -47,8 +60,9 @@ function AppHeader() {
   return (
     <>
       Not signed in <br />
-      <button onClick={() => signIn()}>Sign in</button>
+      <button onClick={() => signIn("github")}>Sign in with GitHub</button>
     </>
   );
 }
+
 export default AppHeader;

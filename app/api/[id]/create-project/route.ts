@@ -30,40 +30,45 @@ export async function POST(request: Request) {
   }
 
   try {
-    const res = await prisma.$transaction(async (db) => {
-      // Create a new project
-      const project = await db.project.create({
-        data: {
-          name,
-          ownerId: UserId,
-        },
-      });
+    const { repoName, repoOwner } = await fetchGithubRepo(repoUrl);
+    const res = await prisma.$transaction(
+      async (db) => {
+        // Create a new project
+        const project = await db.project.create({
+          data: {
+            name,
+            ownerId: UserId,
+          },
+        });
 
-      // Fetch github repo details
-      const { repoName, repoOwner } = await fetchGithubRepo(repoUrl);
+        await db.memberships.create({
+          data: {
+            userId: UserId,
+            projectId: project.ProjectId,
+            role: "OWNER",
+          },
+        });
+        return project;
+      },
+      {
+        timeout: 10000, // Increase timeout to 10 seconds
+      }
+    );
 
-      // Add repo to the repos
-      await db.repos.create({
-        data: {
-          repoName,
-          repoOwner,
-          repoUrl,
-          projectId: project.ProjectId,
-        },
-      });
+    // Linking the repo to the project and making the repository
+    // Also adding webhook to the repo
 
-      // Add owner to the member table
-      await db.memberships.create({
-        data: {
-          userId: UserId,
-          projectId: project.ProjectId,
-          role: "OWNER",
-        },
-      });
-
-      return project;
+    await fetch(`http://localhost:3000/api/${res.ProjectId}/link-repo`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        repoName,
+        repoOwner,
+        repoUrl,
+      }),
     });
-
     return new Response(JSON.stringify(res), {
       status: 201,
     });

@@ -34,20 +34,25 @@ export const authOptions = {
 
       return true;
     },
-  },
-  async jwt({ token, account, user }) {
-    if (account) {
-      token.accessToken = account.access_token;
-      token.githubUsername = user?.name;
-    }
-    console.log("JWT token:", token);
-    return token;
-  },
-  async session({ session, token }) {
-    session.accessToken = token.accessToken;
-    session.githubUsername = token.githubUsername;
-    console.log("Session:", session);
-    return session;
+    async jwt({ token, account, user }) {
+      // Initial sign in
+      if (account && user) {
+        return {
+          ...token,
+          accessToken: account.access_token,
+          githubUsername: user.name,
+        };
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      // Send properties to the client
+      if (token) {
+        session.user.accessToken = token.accessToken;
+        session.user.githubUsername = token.githubUsername;
+      }
+      return session;
+    },
   },
   secret: process.env.NEXTAUTH_SECRET || "",
 };
