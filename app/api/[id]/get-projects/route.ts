@@ -1,6 +1,6 @@
-// // Route for fetching all the projects that a user is a member of
-// // Receives a user ID as a parameter
-// // Returns a list of projects with their details project name, project ID and role of the user in the project
+// Route for fetching all the projects that a user is a member of
+// Receives a user ID as a parameter
+// Returns a list of projects with their details project name, project ID and role of the user in the project
 
 import { PrismaClient } from "@prisma/client";
 

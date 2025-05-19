@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
@@ -8,7 +7,7 @@ export async function GET(request: Request) {
 
   try {
     if (!email) {
-      return NextResponse.json({ error: "Email is required" }, { status: 400 });
+      return Response.json({ error: "Email is required" }, { status: 400 });
     }
 
     const user = await prisma.user.findUnique({
@@ -18,12 +17,12 @@ export async function GET(request: Request) {
     });
 
     if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+      return Response.json({ error: "User not found" }, { status: 404 });
     }
 
-    return NextResponse.json(user);
+    return Response.json(user);
   } catch (error) {
     console.error("Error fetching user:", error);
-    return NextResponse.json({ error: "Error fetching user" }, { status: 500 });
+    return Response.json({ error: "Error fetching user" }, { status: 500 });
   }
 }

@@ -57,6 +57,7 @@ model Repos {
   repoName  String
   repoOwner String
   repoUrl   String
+  webhookId Int?
   projectId String  @unique
   project   Project @relation(fields: [projectId], references: [ProjectId], onDelete: Cascade)
 }

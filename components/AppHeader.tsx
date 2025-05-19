@@ -23,8 +23,7 @@ function AppHeader() {
               console.error("User not found");
             }
           } else {
-            const errorData = await response.json();
-            console.error("Error fetching user:", errorData);
+            signIn();
           }
         } catch (error) {
           console.error("Error fetching user in client:", error);
@@ -34,6 +33,16 @@ function AppHeader() {
 
     redirectUser();
   }, [session, router]);
+
+  if (session.data?.user) {
+    return (
+      <>
+        <h1>Welcome {session.data.user.name}</h1>
+        <p>Email: {session.data.user.email}</p>
+        <button onClick={() => signIn()}>Sign out</button>
+      </>
+    );
+  }
 
   return (
     <>
