@@ -10,6 +10,11 @@ export const authOptions = {
     GitHubProvider({
       clientId: process.env.GITHUB_CLIENT_ID!,
       clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+      authorization: {
+        params: {
+          scope: "repo user admin:repo_hook", // Needed for webhook creation
+        },
+      },
     }),
   ],
 
@@ -26,6 +31,7 @@ export const authOptions = {
           data: {
             email: user.email || "",
             username: user.name || "",
+            accessToken: account.access_token,
           },
         });
 
@@ -33,25 +39,6 @@ export const authOptions = {
       }
 
       return true;
-    },
-    async jwt({ token, account, user }) {
-      // Initial sign in
-      if (account && user) {
-        return {
-          ...token,
-          accessToken: account.access_token,
-          githubUsername: user.name,
-        };
-      }
-      return token;
-    },
-    async session({ session, token }) {
-      // Send properties to the client
-      if (token) {
-        session.user.accessToken = token.accessToken;
-        session.user.githubUsername = token.githubUsername;
-      }
-      return session;
     },
   },
   secret: process.env.NEXTAUTH_SECRET || "",

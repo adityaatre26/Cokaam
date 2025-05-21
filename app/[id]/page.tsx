@@ -33,13 +33,6 @@ export default function UserPage({ params }) {
       <h1>User ID: {id}</h1>
       <p>This is the user page for user with ID: {id}</p>
 
-      {session?.user?.accessToken && (
-        <div>
-          <p>GitHub Access Token: {session.user.accessToken}</p>
-          <p>GitHub Username: {session.user.githubUsername}</p>
-        </div>
-      )}
-
       <button onClick={() => signOut()}>Sign out</button>
     </div>
   );

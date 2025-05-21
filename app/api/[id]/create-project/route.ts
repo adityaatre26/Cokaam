@@ -67,6 +67,7 @@ export async function POST(request: Request) {
         repoName,
         repoOwner,
         repoUrl,
+        UserId,
       }),
     });
     return new Response(JSON.stringify(res), {

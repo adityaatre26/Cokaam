@@ -49,9 +49,6 @@ function AppHeader() {
       <>
         <h1>Welcome {session.user.name}</h1>
         <p>Email: {session.user.email}</p>
-        {session.user.accessToken && (
-          <p>GitHub Auth: {session.user.accessToken.substring(0, 10)}...</p>
-        )}
         <button onClick={() => signOut()}>Sign out</button>
       </>
     );

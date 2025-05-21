@@ -1,7 +1,5 @@
 import { PrismaClient } from "@prisma/client";
 import { Octokit } from "@octokit/rest";
-import { getServerSession } from "next-auth";
-import { authOptions } from "../../auth/[...nextauth]/route";
 const prisma = new PrismaClient();
 
 export async function POST(
@@ -10,15 +8,13 @@ export async function POST(
 ) {
   try {
     const body = await request.json();
-    const { repoName, repoOwner, repoUrl } = body;
-    const session = await getServerSession(authOptions);
+    const { repoName, repoOwner, repoUrl, UserId } = body;
+
     const { id } = await params;
-    if (!session) {
-      return new Response("Unauthorized", { status: 401 });
-    }
+
     const user = await prisma.user.findUnique({
       where: {
-        email: "aditya.atre26@gmail.com",
+        UserId: UserId,
       },
     });
 
@@ -27,7 +23,7 @@ export async function POST(
     }
     // This will take the user access token and create a webhook for that repo using github api
     const octokit = new Octokit({
-      auth: session.user.accessToken,
+      auth: user.accessToken,
     });
 
     const testrepo = await octokit.rest.repos.get({

@@ -14,9 +14,10 @@ datasource db {
 }
 
 model User {
-  UserId   String  @id @default(uuid())
-  email    String  @unique
-  username String? @unique
+  UserId      String  @id @default(uuid())
+  email       String  @unique
+  username    String? @unique
+  accessToken String?
 
   ownedProjects Project[]     @relation("ProjectOwner")
   memberships   Memberships[]
