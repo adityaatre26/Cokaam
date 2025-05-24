@@ -3,7 +3,9 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 async function fetchGithubRepo(repoUrl: string) {
-  const m = repoUrl.match(/github\.com\/([^/]+)\/([^/]+)(?:\.git)?$/i);
+  const m = repoUrl.match(
+    /^https:\/\/github\.com\/([^/]+)\/([^/]+?)(?:\.git)?(?:\/)?(?:[#?].*)?$/i
+  );
   if (!m) throw new Error("Invalid GitHub URL");
 
   const [, owner, repo] = m;
