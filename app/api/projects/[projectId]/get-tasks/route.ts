@@ -15,7 +15,9 @@ export async function GET(
     const tasks = await prisma.task.findMany({
       where: {
         projectId: projectId,
-        status: "PENDING",
+        status: {
+          in: ["TODO", "IN_PROGRESS"],
+        },
       },
     });
 

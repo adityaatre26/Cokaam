@@ -37,14 +37,15 @@ export async function POST(req: Request) {
 
     for (const commit of commits) {
       console.log("commit:", commit);
-      const matching = await prisma.task.findFirst({
+      const tasks = await prisma.task.findMany({
         where: {
           projectId: linkedRepo.projectId,
-          title: {
-            contains: commit.message,
-          },
         },
       });
+
+      const matching = tasks.find((task) =>
+        commit.message.toLowerCase().includes(task.title.toLowerCase())
+      );
 
       if (matching) {
         await prisma.task.update({
@@ -52,7 +53,7 @@ export async function POST(req: Request) {
             TaskId: matching.TaskId,
           },
           data: {
-            status: "COMPLETED",
+            status: "TODO",
           },
         });
       }
