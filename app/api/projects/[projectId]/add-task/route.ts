@@ -6,7 +6,7 @@ export async function POST(
   request: Request,
   { params }: { params: { projectId: string } }
 ) {
-  const { projectId } = params;
+  const { projectId } = await params;
   const { title, description, UserId } = await request.json();
 
   if (!title || !description || !UserId) {

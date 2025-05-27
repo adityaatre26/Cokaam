@@ -10,12 +10,14 @@ export async function DELETE(
     const { UserId } = await request.json();
     const { projectId } = await params;
 
-    const user = await prisma.user.findUnique({
-      where: { UserId: UserId },
+    const user = await prisma.memberships.findFirst({
+      where: { userId: UserId, projectId: projectId, role: "OWNER" },
     });
 
     if (!user) {
-      return new Response("User not found", { status: 404 });
+      return new Response("Only owner is permitted to delete the project", {
+        status: 403,
+      });
     }
 
     const repoTBD = await prisma.repos.findUnique({
