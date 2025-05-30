@@ -6,8 +6,16 @@ export async function GET(request: Request) {
   const email = searchParams.get("email");
 
   try {
+    console.log(email);
     if (!email) {
-      return Response.json({ error: "Email is required" }, { status: 400 });
+      return Response.json(
+        {
+          success: false,
+          message: "Email is required",
+          data: null,
+        },
+        { status: 400 }
+      );
     }
 
     const user = await prisma.user.findUnique({
@@ -16,11 +24,24 @@ export async function GET(request: Request) {
       },
     });
 
+    console.log(user);
+
     if (!user) {
-      return Response.json({ error: "User not found" }, { status: 404 });
+      return Response.json(
+        {
+          success: false,
+          message: "User not found",
+          data: null,
+        },
+        { status: 404 }
+      );
     }
 
-    return Response.json(user);
+    return Response.json({
+      success: true,
+      message: "User found successfully",
+      data: user,
+    });
   } catch (error) {
     console.error("Error fetching user:", error);
     return Response.json({ error: "Error fetching user" }, { status: 500 });
