@@ -17,16 +17,24 @@ export async function GET(request: Request) {
         { status: 400 }
       );
     }
-
-    const user = await prisma.user.findUnique({
+    const userData = await prisma.user.findUnique({
       where: {
         email: email,
       },
+      include: {
+        ownedProjects: {
+          select: {
+            ProjectId: true,
+            name: true,
+            // description: true,
+          },
+        },
+      },
     });
 
-    console.log(user);
+    console.log(userData);
 
-    if (!user) {
+    if (!userData) {
       return Response.json(
         {
           success: false,
@@ -37,10 +45,20 @@ export async function GET(request: Request) {
       );
     }
 
+    // Formatting the response in the requested structure
+    const formattedResponse = {
+      User: {
+        id: userData.UserId,
+        email: userData.email,
+        username: userData.username,
+      },
+      Projects: userData.ownedProjects,
+    };
+
     return Response.json({
       success: true,
       message: "User found successfully",
-      data: user,
+      data: formattedResponse,
     });
   } catch (error) {
     console.error("Error fetching user:", error);

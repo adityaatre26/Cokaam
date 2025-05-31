@@ -14,46 +14,25 @@ import {
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { signIn, signOut, useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import axios from "axios";
+// import { useRouter } from "next/navigation";
+import { useUser } from "@/contexts/UserContext";
 
 export default function LandingPage() {
-  const { data: session } = useSession();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: session, status } = useSession();
+  const { user, projects, isAuthenticated, isLoading } = useUser();
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      setIsLoading(true);
-      try {
-        if (session?.user?.email) {
-          console.log(session);
-          const email = session.user.email;
-          const response = await axios.get(`/api/getUser?email=${email}`);
+  // Removed redundant authentication check as we're using UserContext
 
-          if (response.status === 200 && response.data.success) {
-            setIsAuthenticated(true);
-          } else {
-            setIsAuthenticated(false);
-          }
-        } else {
-          setIsAuthenticated(false);
-        }
-      } catch (error) {
-        console.error("Auth check error:", error);
-        setIsAuthenticated(false);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkAuth();
-  }, [session]);
-
-  // const handleSignIn = async () => {
-
-  // };
+  const debugContext = () => {
+    console.log("=== UserContext Debug ===");
+    console.log("Session:", session);
+    console.log("Session Status:", status);
+    console.log("User:", user);
+    console.log("Projects:", projects);
+    console.log("IsAuthenticated:", isAuthenticated);
+    console.log("IsLoading:", isLoading);
+    console.log("========================");
+  };
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -85,6 +64,14 @@ export default function LandingPage() {
               >
                 features
               </Link>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={debugContext}
+                className="text-yellow-400 hover:text-yellow-300 text-xs"
+              >
+                Debug
+              </Button>
               <Link
                 href="#about"
                 className="text-gray-300 hover:text-white transition-all duration-300 font-normal text-sm"
