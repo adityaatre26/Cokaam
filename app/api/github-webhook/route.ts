@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import axios from "axios";
 import crypto from "crypto";
 
 const prisma = new PrismaClient();
@@ -6,6 +7,7 @@ const prisma = new PrismaClient();
 export async function POST(req: Request) {
   try {
     const body = await req.text();
+    console.log("Inside the webhook handler");
 
     if (req.headers.get("x-github-event") === "ping") {
       return new Response("Pong", { status: 200 });
@@ -33,30 +35,52 @@ export async function POST(req: Request) {
 
     if (!linkedRepo) {
       return new Response("Repo not found", { status: 404 });
-    }
+    } // Get the latest commit (last in the array)
+    const latestCommit = commits[commits.length - 1];
+    console.log("Latest commit:", latestCommit);
 
-    for (const commit of commits) {
-      console.log("commit:", commit);
-      const tasks = await prisma.task.findMany({
+    // Check tasks for the latest commit
+    const tasks = await prisma.task.findMany({
+      where: {
+        projectId: linkedRepo.projectId,
+      },
+    });
+
+    const matching = tasks.find((task) =>
+      latestCommit.message.toLowerCase().includes(task.title.toLowerCase())
+    );
+    if (matching) {
+      await prisma.task.update({
         where: {
-          projectId: linkedRepo.projectId,
+          TaskId: matching.TaskId,
+        },
+        data: {
+          status: "TODO",
         },
       });
+    }
 
-      const matching = tasks.find((task) =>
-        commit.message.toLowerCase().includes(task.title.toLowerCase())
-      );
+    console.log("Adding to the database");
 
-      if (matching) {
-        await prisma.task.update({
-          where: {
-            TaskId: matching.TaskId,
-          },
-          data: {
-            status: "TODO",
-          },
-        });
-      }
+    // Store the commit in the database
+    await prisma.commit.create({
+      data: {
+        projectId: linkedRepo.projectId,
+        message: latestCommit.message,
+        author: latestCommit.author.name,
+        branch: payload.ref.split("/").pop(),
+      },
+    });
+    try {
+      await axios.post("http://localhost:4000/emit-commit", {
+        projectId: linkedRepo.projectId,
+        message: latestCommit.message,
+        author: latestCommit.author.name,
+        branch: payload.ref.split("/").pop(), // Get the branch name from the ref
+      });
+      console.log("Commit sent to socket server successfully");
+    } catch (err) {
+      console.error("Error sending commit to socket server:", err);
     }
 
     return new Response("Webhook processed", { status: 200 });

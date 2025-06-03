@@ -24,6 +24,13 @@ import {
 import Link from "next/link";
 import { motion } from "framer-motion";
 import React, { useState, useRef, useEffect } from "react";
+import io from "socket.io-client";
+
+// export default function LiveFeed(){
+//   useEffect(()=>{
+
+//   })
+// }
 
 export default function ProjectDetail({
   params,
@@ -87,88 +94,22 @@ export default function ProjectDetail({
     },
   ];
 
-  const repoActivity = [
+  const [repoActivity, setRepoActivity] = useState([
     {
       id: 1,
       type: "commit",
       message: "fix: authentication flow bug",
       author: "mike jones",
-      time: "2 hours ago",
       branch: "main",
     },
     {
       id: 2,
       type: "pull-request",
-      title: "Feature: User Profile UI",
+      message: "fix: authentication flow bug",
       author: "sarah kim",
-      status: "open",
-      time: "5 hours ago",
-    },
-    {
-      id: 3,
-      type: "commit",
-      message: "feat: add notification preferences",
-      author: "emma davis",
-      time: "yesterday",
-      branch: "feature/notifications",
-    },
-    {
-      id: 4,
-      type: "commit",
-      message: "chore: update dependencies",
-      author: "alex chen",
-      time: "2 days ago",
       branch: "main",
     },
-    {
-      id: 5,
-      type: "pull-request",
-      title: "Refactor: API Service Layer",
-      author: "mike jones",
-      status: "merged",
-      time: "3 days ago",
-    },
-    {
-      id: 6,
-      type: "commit",
-      message: "fix: mobile layout issues",
-      author: "sarah kim",
-      time: "3 days ago",
-      branch: "fix/mobile-layout",
-    },
-    {
-      id: 7,
-      type: "commit",
-      message: "feat: add dark mode support",
-      author: "emma davis",
-      time: "4 days ago",
-      branch: "feature/dark-mode",
-    },
-    {
-      id: 8,
-      type: "commit",
-      message: "docs: update readme with new features",
-      author: "alex chen",
-      time: "5 days ago",
-      branch: "main",
-    },
-    {
-      id: 9,
-      type: "pull-request",
-      title: "Feature: Advanced Search",
-      author: "tom wilson",
-      status: "open",
-      time: "6 days ago",
-    },
-    {
-      id: 10,
-      type: "commit",
-      message: "fix: memory leak in data processing",
-      author: "emma davis",
-      time: "1 week ago",
-      branch: "hotfix/memory-leak",
-    },
-  ];
+  ]);
 
   const [tasks, setTasks] = useState([
     {
@@ -268,6 +209,28 @@ export default function ProjectDetail({
 
     return statusOrder[b.status] - statusOrder[a.status];
   });
+
+  useEffect(() => {
+    const socket = io("http://localhost:4000");
+    socket.on("new_commit", (data) => {
+      console.log("New commit received: ", data);
+
+      if (data.projectId === unwrappedParams.projectId) {
+        setRepoActivity((prevActivity) => [
+          {
+            id: Date.now(),
+            type: "commit",
+            message: data.message,
+            author: data.author,
+            branch: data.branch,
+          },
+          ...prevActivity,
+        ]);
+      }
+
+      return () => socket.disconnect();
+    });
+  }, [unwrappedParams.projectId]);
 
   // Check if sections can scroll
   useEffect(() => {
@@ -490,14 +453,12 @@ export default function ProjectDetail({
                       </div>
                       <div className="flex-1">
                         <p className="text-gray-200 font-normal text-sm mb-1">
-                          {activity.type === "commit"
-                            ? activity.message
-                            : activity.title}
+                          {activity.message}
                         </p>
                         <div className="flex items-center text-xs text-gray-400">
                           <span className="capitalize">{activity.author}</span>
                           <span className="mx-1">•</span>
-                          <span>{activity.time}</span>
+                          {/* <span>{activity.time}</span> */}
                           {activity.type === "commit" && (
                             <>
                               <span className="mx-1">•</span>
@@ -509,7 +470,7 @@ export default function ProjectDetail({
                           {activity.type === "pull-request" && (
                             <>
                               <span className="mx-1">•</span>
-                              <span
+                              {/* <span
                                 className={`${
                                   activity.status === "open"
                                     ? "text-[#00607a]"
@@ -517,7 +478,7 @@ export default function ProjectDetail({
                                 } capitalize`}
                               >
                                 {activity.status}
-                              </span>
+                              </span> */}
                             </>
                           )}
                         </div>
