@@ -18,7 +18,7 @@ import {
   ArrowLeft,
   Code,
   GitCommit,
-  GitPullRequest,
+  // GitPullRequest,
   ChevronDown,
 } from "lucide-react";
 import Link from "next/link";
@@ -31,14 +31,16 @@ import io from "socket.io-client";
 
 //   })
 // }
-
+interface paramInterface {
+  projectId: string;
+}
 export default function ProjectDetail({
   params,
 }: {
   params: { projectId: string };
 }) {
   // Unwrap params using React.use()
-  const unwrappedParams = React.use(params);
+  const unwrappedParams: paramInterface = React.use(params);
   const [newTask, setNewTask] = useState("");
   const [taskPriority, setTaskPriority] = useState("medium");
   const [repoCanScroll, setRepoCanScroll] = useState(false);
@@ -212,25 +214,34 @@ export default function ProjectDetail({
 
   useEffect(() => {
     const socket = io("http://localhost:4000");
+
+    socket.on("connect", () => {
+      socket.emit("join_project", unwrappedParams.projectId);
+      console.log(
+        "Connected to socket server and joined project:",
+        unwrappedParams.projectId
+      );
+    });
+
     socket.on("new_commit", (data) => {
       console.log("New commit received: ", data);
 
-      if (data.projectId === unwrappedParams.projectId) {
-        setRepoActivity((prevActivity) => [
-          {
-            id: Date.now(),
-            type: "commit",
-            message: data.message,
-            author: data.author,
-            branch: data.branch,
-          },
-          ...prevActivity,
-        ]);
-      }
-
-      return () => socket.disconnect();
+      setRepoActivity((prevActivity) => [
+        {
+          id: Date.now(),
+          type: "commit",
+          message: data.message,
+          author: data.author,
+          branch: data.branch,
+        },
+        ...prevActivity,
+      ]);
     });
-  }, [unwrappedParams.projectId]);
+
+    return () => {
+      socket.disconnect(); // This automatically leaves all rooms
+    };
+  }, [unwrappedParams.projectId]); // Put projectId back in dependency array
 
   // Check if sections can scroll
   useEffect(() => {
@@ -439,17 +450,7 @@ export default function ProjectDetail({
                   >
                     <div className="flex items-start">
                       <div className="mt-1 mr-3">
-                        {activity.type === "commit" ? (
-                          <GitCommit className="h-4 w-4 text-[#9a0000]" />
-                        ) : (
-                          <GitPullRequest
-                            className={`h-4 w-4 ${
-                              activity.status === "merged"
-                                ? "text-[#9a0000]"
-                                : "text-[#00607a]"
-                            }`}
-                          />
-                        )}
+                        <GitCommit className="h-4 w-4 text-[#9a0000]" />
                       </div>
                       <div className="flex-1">
                         <p className="text-gray-200 font-normal text-sm mb-1">
