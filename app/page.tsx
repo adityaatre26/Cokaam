@@ -19,7 +19,7 @@ import { useUser } from "@/contexts/UserContext";
 
 export default function LandingPage() {
   const { data: session, status } = useSession();
-  const { user, projects, isAuthenticated, isLoading } = useUser();
+  const { user, projects, isAuthenticated, isLoading, logOut } = useUser();
 
   // Removed redundant authentication check as we're using UserContext
 
@@ -32,6 +32,11 @@ export default function LandingPage() {
     console.log("IsAuthenticated:", isAuthenticated);
     console.log("IsLoading:", isLoading);
     console.log("========================");
+  };
+
+  const handleSignOut = async () => {
+    await signOut({ redirect: false });
+    logOut(); // Call the logOut function from UserContext
   };
 
   return (
@@ -146,7 +151,7 @@ export default function LandingPage() {
                   </Button>
                   <Button
                     variant="ghost"
-                    onClick={() => signOut({ redirect: false })}
+                    onClick={handleSignOut}
                     className="text-gray-300 hover:text-white hover:bg-gray-900/50 font-normal text-sm transition-all duration-300 hover:px-6"
                   >
                     sign out

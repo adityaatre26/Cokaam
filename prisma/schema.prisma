@@ -29,6 +29,7 @@ model Project {
   ProjectId   String        @id @default(uuid())
   name        String
   ownerId     String
+  description String?
   updatedAt   DateTime      @updatedAt
   owner       User          @relation("ProjectOwner", fields: [ownerId], references: [UserId], onDelete: Cascade)
   memberships Memberships[]
@@ -81,11 +82,18 @@ enum Status {
   DONE
 }
 
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
 model Task {
   TaskId      String   @id @default(uuid())
   title       String
   status      Status   @default(TODO)
   description String?
+  priority    Priority @default(LOW)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   projectId   String

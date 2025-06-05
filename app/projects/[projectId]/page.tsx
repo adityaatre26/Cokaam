@@ -25,12 +25,15 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import React, { useState, useRef, useEffect } from "react";
 import io from "socket.io-client";
+import axios from "axios";
+import {
+  ProjectInterface,
+  TaskInterface,
+  CommitInterface,
+  MembershipInterface,
+} from "@/types/projectTypes";
+import { useUser } from "@/contexts/UserContext";
 
-// export default function LiveFeed(){
-//   useEffect(()=>{
-
-//   })
-// }
 interface paramInterface {
   projectId: string;
 }
@@ -40,63 +43,104 @@ export default function ProjectDetail({
   params: { projectId: string };
 }) {
   // Unwrap params using React.use()
+  const { user } = useUser();
   const unwrappedParams: paramInterface = React.use(params);
   const [newTask, setNewTask] = useState("");
-  const [taskPriority, setTaskPriority] = useState("medium");
+  const [taskDescription, setTaskDescription] = useState("");
+  const [taskPriority, setTaskPriority] = useState("MEDIUM");
   const [repoCanScroll, setRepoCanScroll] = useState(false);
   const [taskCanScroll, setTaskCanScroll] = useState(false);
   const [repoScrollPosition, setRepoScrollPosition] = useState(0);
   const [taskScrollPosition, setTaskScrollPosition] = useState(0);
   const repoContainerRef = useRef<HTMLDivElement>(null);
   const taskContainerRef = useRef<HTMLDivElement>(null);
+  const [project, setProject] = useState<ProjectInterface | null>(null);
+  const [members, setMembers] = useState<MembershipInterface[]>([]);
+  const [tasks, setTasks] = useState<TaskInterface[]>([]);
+  const [commit, setCommits] = useState<CommitInterface[]>([]);
+  // const project = {
+  //   id: unwrappedParams.projectId,
+  //   name: "mobile app redesign",
+  //   description: "complete redesign of the mobile application with new ui/ux",
+  //   status: "active",
+  //   progress: 75,
+  // };
 
-  const project = {
-    id: unwrappedParams.projectId,
-    name: "mobile app redesign",
-    description: "complete redesign of the mobile application with new ui/ux",
-    status: "active",
-    progress: 75,
-  };
+  useEffect(() => {
+    const fetchProject = async () => {
+      try {
+        const response = await axios.get(
+          `/api/${unwrappedParams.projectId}/get-projects`
+        );
+        const projectData = response.data.data[0];
+        setProject(projectData.projectInfo);
+        setMembers(projectData.members);
+        setTasks(projectData.activeTasks);
+        setCommits(projectData.recentCommits);
 
-  const members = [
-    {
-      id: 1,
-      name: "alex chen",
-      role: "project lead",
-      avatar: "AC",
-      status: "online",
-    },
-    {
-      id: 2,
-      name: "sarah kim",
-      role: "designer",
-      avatar: "SK",
-      status: "online",
-    },
-    {
-      id: 3,
-      name: "mike jones",
-      role: "developer",
-      avatar: "MJ",
-      status: "away",
-    },
-    {
-      id: 4,
-      name: "emma davis",
-      role: "developer",
-      avatar: "ED",
-      status: "offline",
-    },
-    {
-      id: 5,
-      name: "tom wilson",
-      role: "qa engineer",
-      avatar: "TW",
-      status: "online",
-    },
-  ];
+        // console.log("This is the project that has been initialised", project);
 
-  const [repoActivity, setRepoActivity] = useState([
+        // Debug logging
+        console.group("Project Data Debug Info");
+        console.log("Project Info:", projectData.projectInfo);
+        console.log("Members:", projectData.members);
+        console.log("Active Tasks:", projectData.activeTasks);
+        console.log("Recent Commits:", projectData.recentCommits);
+        console.groupEnd();
+      } catch (error) {
+        console.error("Error fetching project information:", error);
+      }
+    };
+
+    fetchProject();
+  }, [unwrappedParams.projectId]);
+
+  // const members = [
+  //   {
+  //     id: 1,
+  //     name: "alex chen",
+  //     role: "project lead",
+  //     avatar: "AC",
+  //     status: "online",
+  //   },
+  //   {
+  //     id: 2,
+  //     name: "sarah kim",
+  //     role: "designer",
+  //     avatar: "SK",
+  //     status: "online",
+  //   },
+  //   {
+  //     id: 3,
+  //     name: "mike jones",
+  //     role: "developer",
+  //     avatar: "MJ",
+  //     status: "away",
+  //   },
+  //   {
+  //     id: 4,
+  //     name: "emma davis",
+  //     role: "developer",
+  //     avatar: "ED",
+  //     status: "offline",
+  //   },
+  //   {
+  //     id: 5,
+  //     name: "tom wilson",
+  //     role: "qa engineer",
+  //     avatar: "TW",
+  //     status: "online",
+  //   },
+  // ];
+
+  interface RepoActivityItem {
+    id: number;
+    type: "commit" | "pull-request";
+    message: string;
+    author: string;
+    branch: string;
+  }
+  const [repoActivity, setRepoActivity] = useState<RepoActivityItem[]>([
     {
       id: 1,
       type: "commit",
@@ -112,105 +156,6 @@ export default function ProjectDetail({
       branch: "main",
     },
   ]);
-
-  const [tasks, setTasks] = useState([
-    {
-      id: 1,
-      title: "design new user interface",
-      assignee: "sarah kim",
-      status: "completed",
-      priority: "high",
-    },
-    {
-      id: 2,
-      title: "implement authentication flow",
-      assignee: "mike jones",
-      status: "in-progress",
-      priority: "high",
-    },
-    {
-      id: 3,
-      title: "setup database schema",
-      assignee: "emma davis",
-      status: "completed",
-      priority: "medium",
-    },
-    {
-      id: 4,
-      title: "create api endpoints",
-      assignee: null,
-      status: "todo",
-      priority: "medium",
-    },
-    {
-      id: 5,
-      title: "write unit tests",
-      assignee: "tom wilson",
-      status: "in-progress",
-      priority: "low",
-    },
-    {
-      id: 6,
-      title: "deploy to staging",
-      assignee: null,
-      status: "todo",
-      priority: "low",
-    },
-    {
-      id: 7,
-      title: "implement user feedback system",
-      assignee: "sarah kim",
-      status: "todo",
-      priority: "medium",
-    },
-    {
-      id: 8,
-      title: "optimize database queries",
-      assignee: "mike jones",
-      status: "in-progress",
-      priority: "high",
-    },
-    {
-      id: 9,
-      title: "add error logging",
-      assignee: null,
-      status: "todo",
-      priority: "low",
-    },
-    {
-      id: 10,
-      title: "create user documentation",
-      assignee: "alex chen",
-      status: "completed",
-      priority: "medium",
-    },
-    {
-      id: 11,
-      title: "implement caching layer",
-      assignee: "emma davis",
-      status: "todo",
-      priority: "high",
-    },
-    {
-      id: 12,
-      title: "setup monitoring dashboard",
-      assignee: "tom wilson",
-      status: "in-progress",
-      priority: "medium",
-    },
-  ]);
-
-  // Sort tasks by priority (high -> medium -> low) and then by status
-  const sortedTasks = [...tasks].sort((a, b) => {
-    const priorityOrder = { high: 3, medium: 2, low: 1 };
-    const statusOrder = { "in-progress": 3, todo: 2, completed: 1 };
-
-    if (priorityOrder[a.priority] !== priorityOrder[b.priority]) {
-      return priorityOrder[b.priority] - priorityOrder[a.priority];
-    }
-
-    return statusOrder[b.status] - statusOrder[a.status];
-  });
 
   useEffect(() => {
     const socket = io("http://localhost:4000");
@@ -235,6 +180,25 @@ export default function ProjectDetail({
           branch: data.branch,
         },
         ...prevActivity,
+      ]);
+    });
+
+    socket.on("new_task", (data) => {
+      console.log("New task received: ", data);
+
+      setTasks((prevTasks) => [
+        {
+          TaskId: data.task.TaskId,
+          title: data.task.title,
+          description: data.task.description,
+          createdAt: new Date(data.task.createdAt),
+          updatedAt: new Date(data.task.updatedAt),
+          priority: data.task.priority,
+          status: data.task.status,
+          assignee: null, // Assuming no assignee for simplicity
+          creator: data.task.creator,
+        },
+        ...prevTasks,
       ]);
     });
 
@@ -284,41 +248,46 @@ export default function ProjectDetail({
         taskContainer.removeEventListener("scroll", checkTaskScroll);
       }
     };
-  }, [repoActivity, sortedTasks]);
+  }, [repoActivity, tasks]);
 
-  const addTask = () => {
-    if (newTask.trim()) {
-      setTasks([
-        ...tasks,
-        {
-          id: tasks.length + 1,
-          title: newTask,
-          assignee: null,
-          status: "todo",
-          priority: taskPriority,
-        },
-      ]);
-      setNewTask("");
-      setTaskPriority("medium");
+  const addTask = async () => {
+    try {
+      if (newTask.trim()) {
+        if (user === null) {
+          console.error("User is not authenticated");
+          return;
+        }
+        if (!project) {
+          console.error("Project is not loaded");
+          return;
+        }
+        console.log(
+          "Sending request to ",
+          `/api/projects/${project?.projectId}/add-task`
+        );
+        const response = await axios.post(
+          `/api/projects/${project?.projectId}/add-task`,
+          {
+            title: newTask,
+            description: taskDescription,
+            priority: taskPriority,
+            UserId: user?.id,
+          }
+        );
+
+        if (response.data.status === "success") {
+          // Reset form
+          setNewTask("");
+          setTaskDescription("");
+          setTaskPriority("MEDIUM");
+
+          // Update tasks list
+          setTasks((prevTasks) => [...prevTasks, response.data.data]);
+        }
+      }
+    } catch (error) {
+      console.error("Error adding task:", error);
     }
-  };
-
-  const takeTask = (taskId: number) => {
-    setTasks(
-      tasks.map((task) =>
-        task.id === taskId
-          ? { ...task, assignee: "alex chen", status: "in-progress" }
-          : task
-      )
-    );
-  };
-
-  const completeTask = (taskId: number) => {
-    setTasks(
-      tasks.map((task) =>
-        task.id === taskId ? { ...task, status: "completed" } : task
-      )
-    );
   };
 
   return (
@@ -336,7 +305,7 @@ export default function ProjectDetail({
               </Link>
               <span className="text-gray-600">/</span>
               <span className="text-gray-300 font-normal text-sm capitalize">
-                {project.name}
+                {project?.name}
               </span>
             </div>
 
@@ -346,7 +315,7 @@ export default function ProjectDetail({
                 variant="ghost"
                 className="text-gray-300 hover:text-white hover:bg-gray-900/50 font-normal text-sm transition-all duration-300 hover:px-6"
               >
-                <Link href={`/projects/${project.id}/settings`}>
+                <Link href={`/projects/${project?.projectId}/settings`}>
                   <Settings className="h-4 w-4 mr-2" />
                   settings
                 </Link>
@@ -374,25 +343,15 @@ export default function ProjectDetail({
             </Link>
           </div>
           <h1 className="text-4xl md:text-5xl font-extralight tracking-tight mb-4 capitalize">
-            {project.name}
+            {project?.name}
           </h1>
           <p className="text-gray-300 font-normal mb-6">
-            {project.description}
+            {project?.description}
           </p>
           <div className="flex items-center space-x-4">
-            <Badge
-              className={`${
-                project.status === "active"
-                  ? "bg-green-500/20 text-green-400"
-                  : project.status === "review"
-                  ? "bg-yellow-500/20 text-yellow-400"
-                  : "bg-blue-500/20 text-blue-400"
-              }`}
-            >
-              {project.status}
-            </Badge>
+            <Badge className="bg-green-500/20 text-green-400">Active</Badge>
             <span className="text-gray-300 font-normal text-sm">
-              {project.progress}% complete
+              23% complete
             </span>
           </div>
         </motion.div>
@@ -443,7 +402,7 @@ export default function ProjectDetail({
                   msOverflowStyle: "none", // IE/Edge
                 }}
               >
-                {repoActivity.map((activity) => (
+                {commit.map((activity) => (
                   <div
                     key={activity.id}
                     className="p-4 hover:bg-gray-900/30 transition-colors"
@@ -460,28 +419,19 @@ export default function ProjectDetail({
                           <span className="capitalize">{activity.author}</span>
                           <span className="mx-1">•</span>
                           {/* <span>{activity.time}</span> */}
-                          {activity.type === "commit" && (
+                          {/* {activity.type === "commit" && ( */}
+                          <>
+                            <span className="mx-1">•</span>
+                            <span className="text-gray-500">
+                              {activity.branch}
+                            </span>
+                          </>
+                          {/* )} */}
+                          {/* {activity.type === "pull-request" && (
                             <>
                               <span className="mx-1">•</span>
-                              <span className="text-gray-500">
-                                {activity.branch}
-                              </span>
                             </>
-                          )}
-                          {activity.type === "pull-request" && (
-                            <>
-                              <span className="mx-1">•</span>
-                              {/* <span
-                                className={`${
-                                  activity.status === "open"
-                                    ? "text-[#00607a]"
-                                    : "text-[#9a0000]"
-                                } capitalize`}
-                              >
-                                {activity.status}
-                              </span> */}
-                            </>
-                          )}
+                          )} */}
                         </div>
                       </div>
                     </div>
@@ -525,8 +475,8 @@ export default function ProjectDetail({
                 Tasks
               </h2>
               <span className="text-sm text-gray-300 font-normal">
-                {tasks.filter((t) => t.status === "completed").length}/
-                {tasks.length} completed
+                {tasks?.filter((t) => t.status === "DONE")?.length || 0}/
+                {tasks?.length || 0} completed
               </span>
             </div>
 
@@ -549,6 +499,19 @@ export default function ProjectDetail({
                   </Button>
                 </div>
 
+                {/* Task Description */}
+                <div>
+                  <Label className="text-sm text-gray-400 font-normal mb-2 block">
+                    Description
+                  </Label>
+                  <Input
+                    placeholder="task description..."
+                    value={taskDescription}
+                    onChange={(e) => setTaskDescription(e.target.value)}
+                    className="bg-gray-900/50 border-gray-800/30 text-gray-200 placeholder-gray-500 font-normal"
+                  />
+                </div>
+
                 {/* Priority Selection */}
                 <div>
                   <Label className="text-sm text-gray-400 font-normal mb-2 block">
@@ -561,7 +524,7 @@ export default function ProjectDetail({
                   >
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem
-                        value="high"
+                        value="HIGH"
                         id="high"
                         className="border-[#9a0000] text-[#9a0000]"
                       />
@@ -574,7 +537,7 @@ export default function ProjectDetail({
                     </div>
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem
-                        value="medium"
+                        value="MEDIUM"
                         id="medium"
                         className="border-yellow-500 text-yellow-500"
                       />
@@ -587,7 +550,7 @@ export default function ProjectDetail({
                     </div>
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem
-                        value="low"
+                        value="LOW"
                         id="low"
                         className="border-gray-500 text-gray-500"
                       />
@@ -611,19 +574,19 @@ export default function ProjectDetail({
                   msOverflowStyle: "none", // IE/Edge
                 }}
               >
-                {sortedTasks.map((task) => (
+                {tasks?.map((task) => (
                   <div
-                    key={task.id}
+                    key={task.TaskId}
                     className="p-4 border-b border-gray-800/30 hover:bg-gray-900/30 transition-colors group"
                   >
                     <div className="flex items-start space-x-3">
                       <button
-                        onClick={() => completeTask(task.id)}
+                        onClick={() => completeTask(task.TaskId)}
                         className="mt-0.5 text-gray-400 hover:text-white transition-colors"
                       >
-                        {task.status === "completed" ? (
+                        {task.status === "DONE" ? (
                           <CheckCircle className="h-4 w-4 text-green-400" />
-                        ) : task.status === "in-progress" ? (
+                        ) : task.status === "IN_PROGRESS" ? (
                           <Clock className="h-4 w-4 text-yellow-400" />
                         ) : (
                           <Circle className="h-4 w-4" />
@@ -632,7 +595,7 @@ export default function ProjectDetail({
                       <div className="flex-1">
                         <div
                           className={`text-sm font-normal ${
-                            task.status === "completed"
+                            task.status === "DONE"
                               ? "text-gray-500"
                               : "text-gray-200"
                           } capitalize`}
@@ -643,11 +606,11 @@ export default function ProjectDetail({
                           {task.assignee ? (
                             <span className="text-xs text-gray-400 flex items-center">
                               <User className="h-3 w-3 mr-1" />
-                              {task.assignee}
+                              {task.assignee.username}
                             </span>
                           ) : (
                             <Button
-                              onClick={() => takeTask(task.id)}
+                              onClick={() => takeTask(task.TaskId)}
                               variant="ghost"
                               size="sm"
                               className="text-xs text-gray-500 hover:text-white transition-colors p-0 h-auto font-normal opacity-0 group-hover:opacity-100"
@@ -657,9 +620,9 @@ export default function ProjectDetail({
                           )}
                           <Badge
                             className={`text-xs ${
-                              task.priority === "high"
+                              task.priority === "HIGH"
                                 ? "bg-[#9a0000]/20 text-[#9a0000]"
-                                : task.priority === "medium"
+                                : task.priority === "MEDIUM"
                                 ? "bg-yellow-500/20 text-yellow-400"
                                 : "bg-gray-500/20 text-gray-400"
                             }`}
@@ -714,15 +677,15 @@ export default function ProjectDetail({
           <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-4">
             {members.map((member) => (
               <div
-                key={member.id}
+                key={member.UserId}
                 className="bg-gray-950/50 border border-gray-800/30 rounded-lg p-4 hover:bg-gray-900/30 transition-all duration-300"
               >
                 <div className="flex flex-col items-center text-center">
                   <div className="w-16 h-16 bg-gray-900/50 rounded-full flex items-center justify-center mb-3 relative">
                     <span className="text-xl font-normal text-gray-200">
-                      {member.avatar}
+                      PP
                     </span>
-                    <div
+                    {/* <div
                       className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-black ${
                         member.status === "online"
                           ? "bg-green-400"
@@ -730,10 +693,10 @@ export default function ProjectDetail({
                           ? "bg-yellow-400"
                           : "bg-gray-600"
                       }`}
-                    ></div>
+                    ></div> */}
                   </div>
                   <div className="text-sm font-normal text-gray-200 capitalize">
-                    {member.name}
+                    {member.username}
                   </div>
                   <div className="text-xs text-gray-400 mt-1">
                     {member.role}
