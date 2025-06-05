@@ -62,6 +62,22 @@ app.post("/emit-addTask", (req, res) => {
   }
 });
 
+app.post("/emit-assignTask", (req, res) => {
+  try {
+    console.log("Received assignTask event");
+    const data = req.body;
+    console.log("Data received:", data);
+    if (!data || !data.projectId) {
+      return res.status(400).send("Bad Request: Missing projectId");
+    }
+    io.to(data.projectId).emit("task_assigned", data);
+    res.status(200).send("Event emitted successfully");
+  } catch (error) {
+    console.log("Error processing assignTask event:", error);
+    return res.status(500).send("Internal Server Error in emit-assignTask");
+  }
+});
+
 server.listen(4000, () => {
   console.log("Socket server is running on port 4000");
 });
