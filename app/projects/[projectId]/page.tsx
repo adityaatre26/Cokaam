@@ -43,7 +43,7 @@ export default function ProjectDetail({
   params: { projectId: string };
 }) {
   // Unwrap params using React.use()
-  const { user } = useUser();
+  const { user, isAuthenticated } = useUser();
   const unwrappedParams: paramInterface = React.use(params);
   const [newTask, setNewTask] = useState("");
   const [taskDescription, setTaskDescription] = useState("");
@@ -202,6 +202,40 @@ export default function ProjectDetail({
       ]);
     });
 
+    socket.on("task_assigned", (data) => {
+      console.log("Task assigned event received: ", data);
+      if (data.assignee === null) {
+        setTasks((prevTasks) =>
+          prevTasks.map((task) =>
+            task.TaskId === data.taskId
+              ? {
+                  ...task,
+                  assignee: null,
+                  status: data.status,
+                }
+              : task
+          )
+        );
+
+        console.log("Updated to null now, nothing is assigned");
+        return;
+      }
+      setTasks((prevTasks) =>
+        prevTasks.map((task) =>
+          task.TaskId === data.taskId
+            ? {
+                ...task,
+                assignee: {
+                  UserId: data.assignee.UserId,
+                  username: data.assignee.username,
+                },
+                status: data.status,
+              }
+            : task
+        )
+      );
+    });
+
     return () => {
       socket.disconnect(); // This automatically leaves all rooms
     };
@@ -287,6 +321,37 @@ export default function ProjectDetail({
       }
     } catch (error) {
       console.error("Error adding task:", error);
+    }
+  };
+
+  const assignTask = async (taskId: string) => {
+    try {
+      if (!isAuthenticated) {
+        console.error("User is not authenticated");
+        return;
+      }
+      const task = tasks.find((t) => t.TaskId === taskId);
+      console.log(task?.status, user?.id, task?.assignee?.UserId);
+      if (!task || (task.assignee && task.assignee.UserId !== user?.id)) {
+        console.error(
+          "Task cannot be assigned - either not found, not in progress, or not assigned to current user"
+        );
+        return;
+      }
+
+      console.log(user?.id, taskId);
+
+      const response = await axios.post(
+        `/api/projects/${project?.projectId}/assign-task`,
+        {
+          taskId,
+          UserId: user?.id,
+        }
+      );
+
+      console.log(response);
+    } catch (error) {
+      console.error("Error assigning task:", error);
     }
   };
 
@@ -604,13 +669,16 @@ export default function ProjectDetail({
                         </div>
                         <div className="flex items-center space-x-2 mt-1">
                           {task.assignee ? (
-                            <span className="text-xs text-gray-400 flex items-center">
+                            <span
+                              onClick={() => assignTask(task.TaskId)}
+                              className="text-xs text-gray-400 flex items-center cursor-pointer hover:text-white transition-colors"
+                            >
                               <User className="h-3 w-3 mr-1" />
                               {task.assignee.username}
                             </span>
                           ) : (
                             <Button
-                              onClick={() => takeTask(task.TaskId)}
+                              onClick={() => assignTask(task.TaskId)}
                               variant="ghost"
                               size="sm"
                               className="text-xs text-gray-500 hover:text-white transition-colors p-0 h-auto font-normal opacity-0 group-hover:opacity-100"

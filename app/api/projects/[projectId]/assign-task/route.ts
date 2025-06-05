@@ -1,12 +1,55 @@
 import { PrismaClient } from "@prisma/client";
-import { AxiosError } from "axios";
-import { NextResponse } from "next/server";
+import axios from "axios";
 
 const prisma = new PrismaClient();
 
 export async function POST(req: Request) {
   try {
     const { UserId, taskId } = await req.json();
+    console.log("Receieved data", req.json());
+    if (!UserId || !taskId) {
+      return new Response(
+        JSON.stringify({
+          status: "error",
+          message: "UserId and taskId are required",
+          data: null,
+        }),
+        { status: 400 }
+      );
+    }
+
+    // Validate UserId and taskId
+    const user = await prisma.user.findUnique({
+      where: {
+        UserId: UserId,
+      },
+    });
+    if (!user) {
+      return new Response(
+        JSON.stringify({
+          status: "error",
+          message: "User not found",
+          data: null,
+        }),
+        { status: 404 }
+      );
+    }
+
+    const task = await prisma.task.findUnique({
+      where: {
+        TaskId: taskId,
+      },
+    });
+    if (!task) {
+      return new Response(
+        JSON.stringify({
+          status: "error",
+          message: "Task not found",
+          data: null,
+        }),
+        { status: 404 }
+      );
+    }
 
     // First, get the current task status
     const currentTask = await prisma.task.findUnique({
@@ -16,12 +59,26 @@ export async function POST(req: Request) {
     });
 
     if (!currentTask) {
-      return NextResponse.json(
-        { success: false, error: { message: "Task not found" } },
+      return new Response(
+        JSON.stringify({
+          status: "error",
+          message: "Task not found",
+          data: null,
+        }),
         { status: 404 }
       );
     }
 
+    if (currentTask.status === "DONE") {
+      return new Response(
+        JSON.stringify({
+          status: "error",
+          message: "Cannot assign a task that is already done",
+          data: null,
+        }),
+        { status: 400 }
+      );
+    }
     // Determine the new status and assignee
     const newStatus = currentTask.status === "TODO" ? "IN_PROGRESS" : "TODO";
     const newAssignee = currentTask.status === "TODO" ? UserId : null;
@@ -36,44 +93,47 @@ export async function POST(req: Request) {
       },
     });
 
-    return NextResponse.json({ success: true, data: result });
+    const assigneeData = newAssignee
+      ? {
+          UserId: newAssignee,
+          username: user.username,
+        }
+      : null;
+
+    console.log("Emitting socket event with data:", {
+      projectId: result.projectId,
+      taskId: result.TaskId,
+      assignee: assigneeData,
+      status: newStatus,
+    });
+
+    await axios.post("http://localhost:4000/emit-assignTask", {
+      projectId: result.projectId,
+      taskId: result.TaskId,
+      assignee: assigneeData,
+      status: newStatus,
+    });
+
+    return new Response(
+      JSON.stringify({
+        status: "success",
+        message: "Task assigned successfully",
+        data: result,
+      }),
+      { status: 200 }
+    );
   } catch (error) {
-    if (error instanceof AxiosError) {
-      // Handle Axios specific errors
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            message: error.message,
-            code: error.code,
-            response: error.response?.data,
-          },
-        },
-        { status: error.response?.status || 500 }
-      );
-    }
+    console.error("Error in assign-task:", error);
 
-    if (error instanceof Error) {
-      // Handle other known errors
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            message: error.message,
-          },
-        },
-        { status: 500 }
-      );
-    }
-
-    // Handle unknown errors
-    return NextResponse.json(
-      {
-        success: false,
-        error: {
-          message: "An unexpected error occurred",
-        },
-      },
+    return new Response(
+      JSON.stringify({
+        status: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "An unexpected error occurred",
+        data: null,
+      }),
       { status: 500 }
     );
   }

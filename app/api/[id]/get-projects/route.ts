@@ -99,7 +99,7 @@ export async function GET(
         role: member.role,
       })),
       activeTasks: project.task.map((task) => ({
-        id: task.TaskId,
+        TaskId: task.TaskId,
         title: task.title,
         status: task.status,
         description: task.description,
