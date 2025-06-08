@@ -69,6 +69,7 @@ export async function GET(
             description: true,
             createdAt: true,
             updatedAt: true,
+            priority: true,
             assignee: {
               select: {
                 UserId: true,
@@ -103,6 +104,7 @@ export async function GET(
         title: task.title,
         status: task.status,
         description: task.description,
+        priority: task.priority,
         createdAt: task.createdAt,
         updatedAt: task.updatedAt,
         assignee: task.assignee

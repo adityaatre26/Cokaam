@@ -95,44 +95,6 @@ export default function ProjectDetail({
     fetchProject();
   }, [unwrappedParams.projectId]);
 
-  // const members = [
-  //   {
-  //     id: 1,
-  //     name: "alex chen",
-  //     role: "project lead",
-  //     avatar: "AC",
-  //     status: "online",
-  //   },
-  //   {
-  //     id: 2,
-  //     name: "sarah kim",
-  //     role: "designer",
-  //     avatar: "SK",
-  //     status: "online",
-  //   },
-  //   {
-  //     id: 3,
-  //     name: "mike jones",
-  //     role: "developer",
-  //     avatar: "MJ",
-  //     status: "away",
-  //   },
-  //   {
-  //     id: 4,
-  //     name: "emma davis",
-  //     role: "developer",
-  //     avatar: "ED",
-  //     status: "offline",
-  //   },
-  //   {
-  //     id: 5,
-  //     name: "tom wilson",
-  //     role: "qa engineer",
-  //     avatar: "TW",
-  //     status: "online",
-  //   },
-  // ];
-
   interface RepoActivityItem {
     id: number;
     type: "commit" | "pull-request";
@@ -171,9 +133,9 @@ export default function ProjectDetail({
     socket.on("new_commit", (data) => {
       console.log("New commit received: ", data);
 
-      setRepoActivity((prevActivity) => [
+      setCommits((prevActivity) => [
         {
-          id: Date.now(),
+          id: data.commitId,
           type: "commit",
           message: data.message,
           author: data.author,
@@ -233,6 +195,13 @@ export default function ProjectDetail({
               }
             : task
         )
+      );
+    });
+
+    socket.on("task_completed", (data) => {
+      console.log("Task completed event received: ", data);
+      setTasks((prevTasks) =>
+        prevTasks.filter((task) => task.TaskId !== data.taskId)
       );
     });
 
@@ -352,6 +321,29 @@ export default function ProjectDetail({
       console.log(response);
     } catch (error) {
       console.error("Error assigning task:", error);
+    }
+  };
+
+  const completeTask = async (taskId: string) => {
+    try {
+      if (!isAuthenticated) {
+        console.error("User is not authenticated");
+        return;
+      }
+
+      // console.log(taskId, user?.id);
+
+      const result = await axios.post(
+        `/api/projects/${unwrappedParams.projectId}/complete-task`,
+        {
+          taskId,
+          userId: user?.id,
+        }
+      );
+
+      console.log("Updated successfully", result.data);
+    } catch (error) {
+      console.log("Error completing task:", error);
     }
   };
 
@@ -745,7 +737,7 @@ export default function ProjectDetail({
           <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-4">
             {members.map((member) => (
               <div
-                key={member.UserId}
+                key={member.userId}
                 className="bg-gray-950/50 border border-gray-800/30 rounded-lg p-4 hover:bg-gray-900/30 transition-all duration-300"
               >
                 <div className="flex flex-col items-center text-center">
@@ -753,15 +745,6 @@ export default function ProjectDetail({
                     <span className="text-xl font-normal text-gray-200">
                       PP
                     </span>
-                    {/* <div
-                      className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-black ${
-                        member.status === "online"
-                          ? "bg-green-400"
-                          : member.status === "away"
-                          ? "bg-yellow-400"
-                          : "bg-gray-600"
-                      }`}
-                    ></div> */}
                   </div>
                   <div className="text-sm font-normal text-gray-200 capitalize">
                     {member.username}

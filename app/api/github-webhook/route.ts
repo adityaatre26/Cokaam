@@ -43,6 +43,9 @@ export async function POST(req: Request) {
     const tasks = await prisma.task.findMany({
       where: {
         projectId: linkedRepo.projectId,
+        status: {
+          in: ["TODO", "IN_PROGRESS"],
+        },
       },
     });
 
@@ -50,12 +53,27 @@ export async function POST(req: Request) {
       latestCommit.message.toLowerCase().includes(task.title.toLowerCase())
     );
     if (matching) {
+      console.log("Matching task found:", matching.title);
+      // Update the task status to DONE
+      // Get user from the database based on GitHub username
+      const user = await prisma.user.findFirst({
+        where: {
+          username: latestCommit.author.username,
+        },
+      });
+
+      console.log("User found:", user);
+      if (!user) {
+        console.log("User not found in the database, update the task manually");
+        return new Response("User not found, update manually", { status: 404 });
+      }
       await prisma.task.update({
         where: {
           TaskId: matching.TaskId,
         },
         data: {
-          status: "TODO",
+          status: "DONE",
+          assigneeId: user.UserId, // Assign the task to the user
         },
       });
     }
@@ -63,7 +81,7 @@ export async function POST(req: Request) {
     console.log("Adding to the database");
 
     // Store the commit in the database
-    await prisma.commit.create({
+    const newcum = await prisma.commit.create({
       data: {
         projectId: linkedRepo.projectId,
         message: latestCommit.message,
@@ -73,7 +91,8 @@ export async function POST(req: Request) {
     });
     try {
       await axios.post("http://localhost:4000/emit-commit", {
-        projectId: linkedRepo.projectId,
+        projectId: newcum.projectId,
+        commitId: newcum.id,
         message: latestCommit.message,
         author: latestCommit.author.name,
         branch: payload.ref.split("/").pop(), // Get the branch name from the ref
@@ -81,6 +100,18 @@ export async function POST(req: Request) {
       console.log("Commit sent to socket server successfully");
     } catch (err) {
       console.error("Error sending commit to socket server:", err);
+    }
+
+    if (matching) {
+      try {
+        await axios.post("http://localhost:4000/emit-completeTask", {
+          projectId: matching.projectId,
+          taskId: matching.TaskId,
+        });
+        console.log("Task sent to socket server successfully");
+      } catch (error) {
+        console.error("Error sending task to socket server:", error);
+      }
     }
 
     return new Response("Webhook processed", { status: 200 });
