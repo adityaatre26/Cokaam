@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,7 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
 import {
   Settings,
   ArrowLeft,
@@ -35,16 +35,28 @@ import {
   ExternalLink,
   Plus,
   Mail,
-} from "lucide-react"
-import Link from "next/link"
-import { motion } from "framer-motion"
-import { useState } from "react"
+} from "lucide-react";
+import Link from "next/link";
+import { motion } from "framer-motion";
+import { useState } from "react";
+import { useProject, Roles } from "@/contexts/ProjectContext";
 
-export default function ProjectSettings({ params }: { params: { projectId: string } }) {
-  const [projectName, setProjectName] = useState("mobile app redesign")
-  const [repositoryUrl, setRepositoryUrl] = useState("https://github.com/team/mobile-app")
-  const [memberEmail, setMemberEmail] = useState("")
-  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false)
+export default function ProjectSettings({
+  params,
+}: {
+  params: { projectId: string };
+}) {
+  const { projectId, members } = useProject();
+
+  console.log("This data has been received from the context");
+  console.log("projectId:", projectId);
+  console.log("members:", members);
+  const [projectName, setProjectName] = useState("mobile app redesign");
+  const [repositoryUrl, setRepositoryUrl] = useState(
+    "https://github.com/team/mobile-app"
+  );
+  const [memberEmail, setMemberEmail] = useState("");
+  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
 
   const project = {
     id: params.projectId,
@@ -52,40 +64,75 @@ export default function ProjectSettings({ params }: { params: { projectId: strin
     description: "complete redesign of the mobile application with new ui/ux",
     status: "active",
     progress: 75,
-  }
+  };
 
-  const members = [
-    { id: 1, name: "alex chen", role: "project lead", avatar: "AC", status: "online", isOwner: true },
-    { id: 2, name: "sarah kim", role: "designer", avatar: "SK", status: "online", isOwner: false },
-    { id: 3, name: "mike jones", role: "developer", avatar: "MJ", status: "away", isOwner: false },
-    { id: 4, name: "emma davis", role: "developer", avatar: "ED", status: "offline", isOwner: false },
-    { id: 5, name: "tom wilson", role: "qa engineer", avatar: "TW", status: "online", isOwner: false },
-  ]
+  const membershit = [
+    {
+      id: 1,
+      name: "alex chen",
+      role: "project lead",
+      avatar: "AC",
+      status: "online",
+      isOwner: true,
+    },
+    {
+      id: 2,
+      name: "sarah kim",
+      role: "designer",
+      avatar: "SK",
+      status: "online",
+      isOwner: false,
+    },
+    {
+      id: 3,
+      name: "mike jones",
+      role: "developer",
+      avatar: "MJ",
+      status: "away",
+      isOwner: false,
+    },
+    {
+      id: 4,
+      name: "emma davis",
+      role: "developer",
+      avatar: "ED",
+      status: "offline",
+      isOwner: false,
+    },
+    {
+      id: 5,
+      name: "tom wilson",
+      role: "qa engineer",
+      avatar: "TW",
+      status: "online",
+      isOwner: false,
+    },
+  ];
 
-  const [projectMembers, setProjectMembers] = useState(members)
+  const [projectMembers, setProjectMembers] = useState(membershit);
 
-  const removeMember = (memberId: number) => {
-    setProjectMembers(projectMembers.filter((member) => member.id !== memberId))
-  }
+  const removeMember = (memberId: string) => {
+    setProjectMembers(members.filter((member) => member.userId !== memberId));
+  };
 
   const saveChanges = () => {
     // Handle save logic here
-    console.log("Saving changes:", { projectName, repositoryUrl })
-  }
+    console.log("Saving changes:", { projectName, repositoryUrl });
+  };
 
   const deleteProject = () => {
     // Handle project deletion here
-    console.log("Deleting project:", project.id)
-  }
+    console.log("Deleting project:", project.id);
+  };
 
   const inviteMember = () => {
     if (memberEmail.trim()) {
       // Handle member invitation logic here
-      console.log("Inviting member:", memberEmail)
-      setMemberEmail("")
-      setIsInviteDialogOpen(false)
+      console.log("Inviting member:", memberEmail);
+      setMemberEmail("");
+      setIsInviteDialogOpen(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -96,14 +143,23 @@ export default function ProjectSettings({ params }: { params: { projectId: strin
             <div className="flex items-center space-x-4">
               <Link href="/dashboard" className="flex items-center space-x-3">
                 <div className="w-7 h-7 bg-[#780000] rounded-md"></div>
-                <span className="text-lg font-extralight tracking-wider">flow</span>
+                <span className="text-lg font-extralight tracking-wider">
+                  flow
+                </span>
               </Link>
               <span className="text-gray-600">/</span>
-              <Link href={`/projects/${project.id}`} className="text-gray-300 hover:text-white transition-colors">
-                <span className="font-normal text-sm capitalize">{project.name}</span>
+              <Link
+                href={`/projects/${project.id}`}
+                className="text-gray-300 hover:text-white transition-colors"
+              >
+                <span className="font-normal text-sm capitalize">
+                  {project.name}
+                </span>
               </Link>
               <span className="text-gray-600">/</span>
-              <span className="text-gray-300 font-normal text-sm">settings</span>
+              <span className="text-gray-300 font-normal text-sm">
+                settings
+              </span>
             </div>
 
             <div className="flex items-center space-x-4">
@@ -140,7 +196,9 @@ export default function ProjectSettings({ params }: { params: { projectId: strin
             <Settings className="h-8 w-8 mr-4" />
             Project Settings
           </h1>
-          <p className="text-gray-300 font-normal">manage project configuration and team access</p>
+          <p className="text-gray-300 font-normal">
+            manage project configuration and team access
+          </p>
         </motion.div>
 
         <div className="space-y-8">
@@ -154,7 +212,10 @@ export default function ProjectSettings({ params }: { params: { projectId: strin
               <h2 className="text-xl font-extralight mb-6">General</h2>
               <div className="space-y-6">
                 <div>
-                  <Label htmlFor="project-name" className="text-sm text-gray-300 font-normal mb-2 block">
+                  <Label
+                    htmlFor="project-name"
+                    className="text-sm text-gray-300 font-normal mb-2 block"
+                  >
                     Project Name
                   </Label>
                   <Input
@@ -166,7 +227,10 @@ export default function ProjectSettings({ params }: { params: { projectId: strin
                 </div>
 
                 <div>
-                  <Label htmlFor="repository-url" className="text-sm text-gray-300 font-normal mb-2 block">
+                  <Label
+                    htmlFor="repository-url"
+                    className="text-sm text-gray-300 font-normal mb-2 block"
+                  >
                     Repository URL
                   </Label>
                   <div className="flex space-x-2">
@@ -184,7 +248,8 @@ export default function ProjectSettings({ params }: { params: { projectId: strin
                     </Button>
                   </div>
                   <p className="text-xs text-gray-500 mt-2">
-                    changing the repository will update all connected integrations
+                    changing the repository will update all connected
+                    integrations
                   </p>
                 </div>
               </div>
@@ -203,7 +268,10 @@ export default function ProjectSettings({ params }: { params: { projectId: strin
                   <GitBranch className="h-5 w-5 mr-2" />
                   Team Members
                 </h2>
-                <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
+                <Dialog
+                  open={isInviteDialogOpen}
+                  onOpenChange={setIsInviteDialogOpen}
+                >
                   <DialogTrigger asChild>
                     <Button className="bg-[#00607a] hover:bg-[#007a9a] text-white font-normal transition-all duration-300 hover:px-6">
                       <Plus className="h-4 w-4 mr-2" />
@@ -217,12 +285,16 @@ export default function ProjectSettings({ params }: { params: { projectId: strin
                         Invite Team Member
                       </DialogTitle>
                       <DialogDescription className="text-gray-300">
-                        Enter the email address of the person you'd like to invite to this project.
+                        Enter the email address of the person you`d like to
+                        invite to this project.
                       </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
                       <div>
-                        <Label htmlFor="member-email" className="text-sm text-gray-300 font-normal mb-2 block">
+                        <Label
+                          htmlFor="member-email"
+                          className="text-sm text-gray-300 font-normal mb-2 block"
+                        >
                           Email Address
                         </Label>
                         <Input
@@ -232,7 +304,9 @@ export default function ProjectSettings({ params }: { params: { projectId: strin
                           value={memberEmail}
                           onChange={(e) => setMemberEmail(e.target.value)}
                           className="bg-gray-900/50 border-gray-800/30 text-gray-200 font-normal focus:border-gray-700"
-                          onKeyPress={(e) => e.key === "Enter" && inviteMember()}
+                          onKeyPress={(e) =>
+                            e.key === "Enter" && inviteMember()
+                          }
                         />
                       </div>
                     </div>
@@ -255,37 +329,37 @@ export default function ProjectSettings({ params }: { params: { projectId: strin
                 </Dialog>
               </div>
               <div className="space-y-4">
-                {projectMembers.map((member) => (
+                {members.map((member) => (
                   <div
-                    key={member.id}
+                    key={member.userId}
                     className="flex items-center justify-between p-4 bg-gray-900/30 rounded-lg hover:bg-gray-900/50 transition-colors"
                   >
                     <div className="flex items-center space-x-4">
                       <div className="w-10 h-10 bg-gray-900/50 rounded-full flex items-center justify-center relative">
-                        <span className="text-sm font-normal text-gray-200">{member.avatar}</span>
-                        <div
-                          className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border border-gray-900 ${
-                            member.status === "online"
-                              ? "bg-green-400"
-                              : member.status === "away"
-                                ? "bg-yellow-400"
-                                : "bg-gray-600"
-                          }`}
-                        ></div>
+                        <span className="text-sm font-normal text-gray-200">
+                          {/* {member.avatar} */}
+                          PP
+                        </span>
                       </div>
                       <div>
                         <div className="text-sm font-normal text-gray-200 capitalize flex items-center space-x-2">
-                          <span>{member.name}</span>
-                          {member.isOwner && <Badge className="bg-[#00607a]/20 text-[#00607a] text-xs">owner</Badge>}
+                          <span>{member.username}</span>
+                          {member.role === Roles.OWNER && (
+                            <Badge className="bg-[#00607a]/20 text-[#00607a] text-xs">
+                              owner
+                            </Badge>
+                          )}
                         </div>
-                        <div className="text-xs text-gray-400">{member.role}</div>
+                        <div className="text-xs text-gray-400">
+                          {member.role}
+                        </div>
                       </div>
                     </div>
-                    {!member.isOwner && (
+                    {!(member.role === Roles.OWNER) && (
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => removeMember(member.id)}
+                        onClick={() => removeMember(member.userId)}
                         className="text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
                       >
                         <UserMinus className="h-4 w-4" />
@@ -294,7 +368,9 @@ export default function ProjectSettings({ params }: { params: { projectId: strin
                   </div>
                 ))}
               </div>
-              <p className="text-xs text-gray-500 mt-4">removed members will lose access to this project immediately</p>
+              <p className="text-xs text-gray-500 mt-4">
+                removed members will lose access to this project immediately
+              </p>
             </div>
           </motion.div>
 
@@ -312,9 +388,12 @@ export default function ProjectSettings({ params }: { params: { projectId: strin
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-4 bg-red-950/20 border border-red-900/30 rounded-lg">
                   <div>
-                    <h3 className="text-sm font-normal text-gray-200 mb-1">Delete Project</h3>
+                    <h3 className="text-sm font-normal text-gray-200 mb-1">
+                      Delete Project
+                    </h3>
                     <p className="text-xs text-gray-400">
-                      permanently delete this project and all associated data. this action cannot be undone.
+                      permanently delete this project and all associated data.
+                      this action cannot be undone.
                     </p>
                   </div>
                   <AlertDialog>
@@ -335,7 +414,10 @@ export default function ProjectSettings({ params }: { params: { projectId: strin
                         </AlertDialogTitle>
                         <AlertDialogDescription className="text-gray-300">
                           Are you absolutely sure you want to delete the{" "}
-                          <strong className="text-red-300">{project.name}</strong> project?
+                          <strong className="text-red-300">
+                            {project.name}
+                          </strong>{" "}
+                          project?
                           <br />
                           <br />
                           This will permanently delete:
@@ -346,7 +428,9 @@ export default function ProjectSettings({ params }: { params: { projectId: strin
                             <li>Project history and analytics</li>
                           </ul>
                           <br />
-                          <strong className="text-red-400">This action cannot be undone.</strong>
+                          <strong className="text-red-400">
+                            This action cannot be undone.
+                          </strong>
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
@@ -369,5 +453,5 @@ export default function ProjectSettings({ params }: { params: { projectId: strin
         </div>
       </div>
     </div>
-  )
+  );
 }

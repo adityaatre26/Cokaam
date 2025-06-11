@@ -33,6 +33,7 @@ import {
   MembershipInterface,
 } from "@/types/projectTypes";
 import { useUser } from "@/contexts/UserContext";
+import { useProject } from "@/contexts/ProjectContext";
 
 interface paramInterface {
   projectId: string;
@@ -44,6 +45,7 @@ export default function ProjectDetail({
 }) {
   // Unwrap params using React.use()
   const { user, isAuthenticated } = useUser();
+  const { setProjectData } = useProject();
   const unwrappedParams: paramInterface = React.use(params);
   const [newTask, setNewTask] = useState("");
   const [taskDescription, setTaskDescription] = useState("");
@@ -58,13 +60,6 @@ export default function ProjectDetail({
   const [members, setMembers] = useState<MembershipInterface[]>([]);
   const [tasks, setTasks] = useState<TaskInterface[]>([]);
   const [commit, setCommits] = useState<CommitInterface[]>([]);
-  // const project = {
-  //   id: unwrappedParams.projectId,
-  //   name: "mobile app redesign",
-  //   description: "complete redesign of the mobile application with new ui/ux",
-  //   status: "active",
-  //   progress: 75,
-  // };
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -77,6 +72,7 @@ export default function ProjectDetail({
         setMembers(projectData.members);
         setTasks(projectData.activeTasks);
         setCommits(projectData.recentCommits);
+        setProjectData(unwrappedParams.projectId, projectData.members);
 
         // console.log("This is the project that has been initialised", project);
 
@@ -94,30 +90,6 @@ export default function ProjectDetail({
 
     fetchProject();
   }, [unwrappedParams.projectId]);
-
-  interface RepoActivityItem {
-    id: number;
-    type: "commit" | "pull-request";
-    message: string;
-    author: string;
-    branch: string;
-  }
-  const [repoActivity, setRepoActivity] = useState<RepoActivityItem[]>([
-    {
-      id: 1,
-      type: "commit",
-      message: "fix: authentication flow bug",
-      author: "mike jones",
-      branch: "main",
-    },
-    {
-      id: 2,
-      type: "pull-request",
-      message: "fix: authentication flow bug",
-      author: "sarah kim",
-      branch: "main",
-    },
-  ]);
 
   useEffect(() => {
     const socket = io("http://localhost:4000");
@@ -251,7 +223,7 @@ export default function ProjectDetail({
         taskContainer.removeEventListener("scroll", checkTaskScroll);
       }
     };
-  }, [repoActivity, tasks]);
+  }, [commit, tasks]);
 
   const addTask = async () => {
     try {

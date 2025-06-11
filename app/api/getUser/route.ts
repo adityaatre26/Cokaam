@@ -21,18 +21,7 @@ export async function GET(request: Request) {
       where: {
         email: email,
       },
-      include: {
-        ownedProjects: {
-          select: {
-            ProjectId: true,
-            name: true,
-            // description: true,
-          },
-        },
-      },
     });
-
-    console.log(userData);
 
     if (!userData) {
       return Response.json(
@@ -45,6 +34,25 @@ export async function GET(request: Request) {
       );
     }
 
+    const allProjects = await prisma.memberships.findMany({
+      where: {
+        userId: userData.UserId,
+      },
+      include: {
+        project: {
+          select: {
+            ProjectId: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    const formattedProjects = allProjects.map((sing) => ({
+      ProjectId: sing.project.ProjectId,
+      name: sing.project.name,
+    }));
+
     // Formatting the response in the requested structure
     const formattedResponse = {
       User: {
@@ -52,8 +60,10 @@ export async function GET(request: Request) {
         email: userData.email,
         username: userData.username,
       },
-      Projects: userData.ownedProjects,
+      Projects: formattedProjects,
     };
+
+    console.log(formattedResponse);
 
     return Response.json({
       success: true,
