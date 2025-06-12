@@ -33,7 +33,8 @@ import {
   MembershipInterface,
 } from "@/types/projectTypes";
 import { useUser } from "@/contexts/UserContext";
-import { useProject } from "@/contexts/ProjectContext";
+import { useProject } from "@/hooks/useProject";
+// import { useProject } from "@/contexts/ProjectContext";
 
 interface paramInterface {
   projectId: string;
@@ -45,7 +46,7 @@ export default function ProjectDetail({
 }) {
   // Unwrap params using React.use()
   const { user, isAuthenticated } = useUser();
-  const { setProjectData } = useProject();
+  // const { setProjectData } = useProject();
   const unwrappedParams: paramInterface = React.use(params);
   const [newTask, setNewTask] = useState("");
   const [taskDescription, setTaskDescription] = useState("");
@@ -61,35 +62,55 @@ export default function ProjectDetail({
   const [tasks, setTasks] = useState<TaskInterface[]>([]);
   const [commit, setCommits] = useState<CommitInterface[]>([]);
 
+  const { data, isLoading, error } = useProject(unwrappedParams.projectId);
+
+  // useEffect(() => {
+  //   const fetchProject = async () => {
+  //     try {
+  //       const response = await axios.get(
+  //         `/api/${unwrappedParams.projectId}/get-projects`
+  //       );
+  //       const projectData = response.data.data[0];
+  //       setProject(projectData.projectInfo);
+  //       setMembers(projectData.members);
+  //       setTasks(projectData.activeTasks);
+  //       setCommits(projectData.recentCommits);
+  //       setProjectData(
+  //         unwrappedParams.projectId,
+  //         projectData.members,
+  //         projectData.projectInfo.name,
+  //         projectData.projectInfo.repoUrl
+  //       );
+
+  //       // console.log("This is the project that has been initialised", project);
+
+  //       // Debug logging
+  //       console.group("Project Data Debug Info");
+  //       console.log("Project Info:", projectData.projectInfo);
+  //       console.log("Members:", projectData.members);
+  //       console.log("Active Tasks:", projectData.activeTasks);
+  //       console.log("Recent Commits:", projectData.recentCommits);
+  //       console.groupEnd();
+  //     } catch (error) {
+  //       console.error("Error fetching project information:", error);
+  //     }
+  //   };
+
+  //   fetchProject();
+  // }, [unwrappedParams.projectId]);
+
   useEffect(() => {
-    const fetchProject = async () => {
-      try {
-        const response = await axios.get(
-          `/api/${unwrappedParams.projectId}/get-projects`
-        );
-        const projectData = response.data.data[0];
-        setProject(projectData.projectInfo);
-        setMembers(projectData.members);
-        setTasks(projectData.activeTasks);
-        setCommits(projectData.recentCommits);
-        setProjectData(unwrappedParams.projectId, projectData.members);
+    if (data) {
+      console.log("Data from react query", data);
+      setProject(data.projectInfo);
+      setMembers(data.members);
+      setTasks(data.activeTasks);
+      setCommits(data.recentCommits);
+    }
+  }, [data]);
 
-        // console.log("This is the project that has been initialised", project);
-
-        // Debug logging
-        console.group("Project Data Debug Info");
-        console.log("Project Info:", projectData.projectInfo);
-        console.log("Members:", projectData.members);
-        console.log("Active Tasks:", projectData.activeTasks);
-        console.log("Recent Commits:", projectData.recentCommits);
-        console.groupEnd();
-      } catch (error) {
-        console.error("Error fetching project information:", error);
-      }
-    };
-
-    fetchProject();
-  }, [unwrappedParams.projectId]);
+  // if (isLoading) return <div>Loading...</div>;
+  // if (error) return <div>Error loading project</div>;
 
   useEffect(() => {
     const socket = io("http://localhost:4000");

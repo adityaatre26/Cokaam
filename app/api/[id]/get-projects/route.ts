@@ -84,6 +84,11 @@ export async function GET(
             },
           },
         },
+        githubRepo: {
+          select: {
+            repoUrl: true,
+          },
+        },
       },
     });
 
@@ -93,6 +98,7 @@ export async function GET(
         projectId: project.ProjectId,
         name: project.name,
         description: project.description || null,
+        repoUrl: project.githubRepo?.repoUrl,
       },
       members: project.memberships.map((member) => ({
         userId: member.user.UserId,

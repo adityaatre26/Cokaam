@@ -2,6 +2,7 @@ export interface ProjectInterface {
   projectId: string;
   name: string;
   description: string | null;
+  repoUrl: string;
 }
 
 export interface MembershipInterface {

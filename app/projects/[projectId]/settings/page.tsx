@@ -1,5 +1,15 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import Link from "next/link";
+import { motion } from "framer-motion";
+
+// Custom Hooks & Context
+import { useProject } from "@/hooks/useProject";
+// import { Roles } from "@/contexts/ProjectContext"; // This was unused, so I've commented it out.
+
+// UI Components (assuming these paths are correct)
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,6 +34,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+
+// Icons
 import {
   Settings,
   ArrowLeft,
@@ -36,103 +48,79 @@ import {
   Plus,
   Mail,
 } from "lucide-react";
-import Link from "next/link";
-import { motion } from "framer-motion";
-import { useState } from "react";
-import { useProject, Roles } from "@/contexts/ProjectContext";
 
-export default function ProjectSettings({
-  params,
-}: {
-  params: { projectId: string };
-}) {
-  const { projectId, members } = useProject();
+export default function ProjectSettings() {
+  const params = useParams();
+  const projectId = params.projectId as string;
 
-  console.log("This data has been received from the context");
-  console.log("projectId:", projectId);
-  console.log("members:", members);
-  const [projectName, setProjectName] = useState("mobile app redesign");
-  const [repositoryUrl, setRepositoryUrl] = useState(
-    "https://github.com/team/mobile-app"
-  );
+  const { data, isLoading, error } = useProject(projectId);
+
+  // This fixes the conditional hook error.
+  const [projectName, setProjectName] = useState("");
+  const [repositoryUrl, setRepositoryUrl] = useState("");
   const [memberEmail, setMemberEmail] = useState("");
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
 
-  const project = {
-    id: params.projectId,
-    name: "mobile app redesign",
-    description: "complete redesign of the mobile application with new ui/ux",
-    status: "active",
-    progress: 75,
-  };
+  // 3. `useEffect` TO SYNC FETCHED DATA WITH LOCAL STATE
+  // This runs only when `data` changes (i.e., after it loads).
+  useEffect(() => {
+    if (data?.projectInfo) {
+      setProjectName(data.projectInfo.name || "");
+      setRepositoryUrl(data.projectInfo.repoUrl || "");
+    }
+  }, [data]); // The dependency array ensures this runs when `data` is fetched.
 
-  const membershit = [
-    {
-      id: 1,
-      name: "alex chen",
-      role: "project lead",
-      avatar: "AC",
-      status: "online",
-      isOwner: true,
-    },
-    {
-      id: 2,
-      name: "sarah kim",
-      role: "designer",
-      avatar: "SK",
-      status: "online",
-      isOwner: false,
-    },
-    {
-      id: 3,
-      name: "mike jones",
-      role: "developer",
-      avatar: "MJ",
-      status: "away",
-      isOwner: false,
-    },
-    {
-      id: 4,
-      name: "emma davis",
-      role: "developer",
-      avatar: "ED",
-      status: "offline",
-      isOwner: false,
-    },
-    {
-      id: 5,
-      name: "tom wilson",
-      role: "qa engineer",
-      avatar: "TW",
-      status: "online",
-      isOwner: false,
-    },
-  ];
+  // 4. LOADING AND ERROR STATES HANDLED *AFTER* ALL HOOKS
+  // This is the correct place for early returns.
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-black text-white">
+        Loading project settings...
+      </div>
+    );
+  }
 
-  const [projectMembers, setProjectMembers] = useState(membershit);
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-black text-white">
+        Error loading project. Please try again.
+      </div>
+    );
+  }
 
-  const removeMember = (memberId: string) => {
-    setProjectMembers(members.filter((member) => member.userId !== memberId));
-  };
+  if (!data) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-black text-white">
+        Project not found.
+      </div>
+    );
+  }
 
+  // Helper function for clarity
   const saveChanges = () => {
-    // Handle save logic here
     console.log("Saving changes:", { projectName, repositoryUrl });
+    // Here you would typically call a mutation to update the project
+    // e.g., updateProject({ projectId, name: projectName, repoUrl: repositoryUrl });
   };
 
   const deleteProject = () => {
-    // Handle project deletion here
-    console.log("Deleting project:", project.id);
+    console.log("Deleting project:", projectId);
+    // Here you would call a mutation to delete the project
+    // e.g., deleteProject({ projectId });
   };
 
   const inviteMember = () => {
     if (memberEmail.trim()) {
-      // Handle member invitation logic here
       console.log("Inviting member:", memberEmail);
+      // Here you would call a mutation to invite a member
+      // e.g., inviteProjectMember({ projectId, email: memberEmail });
       setMemberEmail("");
       setIsInviteDialogOpen(false);
     }
   };
+
+  // 5. DEFENSIVE PROGRAMMING for the members list
+  const members = data.members || [];
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -149,11 +137,12 @@ export default function ProjectSettings({
               </Link>
               <span className="text-gray-600">/</span>
               <Link
-                href={`/projects/${project.id}`}
+                href={`/projects/${projectId}`}
                 className="text-gray-300 hover:text-white transition-colors"
               >
                 <span className="font-normal text-sm capitalize">
-                  {project.name}
+                  {/* Now using the local state, which is synced from `data` */}
+                  {projectName}
                 </span>
               </Link>
               <span className="text-gray-600">/</span>
@@ -185,7 +174,7 @@ export default function ProjectSettings({
         >
           <div className="flex items-center mb-6">
             <Link
-              href={`/projects/${project.id}`}
+              href={`/projects/${projectId}`}
               className="text-gray-300 hover:text-white transition-colors mr-4 flex items-center"
             >
               <ArrowLeft className="h-4 w-4 mr-1" />
@@ -220,12 +209,12 @@ export default function ProjectSettings({
                   </Label>
                   <Input
                     id="project-name"
+                    // 6. INPUTS ARE BOUND TO LOCAL STATE, NOT `data`
                     value={projectName}
                     onChange={(e) => setProjectName(e.target.value)}
                     className="bg-gray-900/50 border-gray-800/30 text-gray-200 font-normal focus:border-gray-700"
                   />
                 </div>
-
                 <div>
                   <Label
                     htmlFor="repository-url"
@@ -329,7 +318,8 @@ export default function ProjectSettings({
                 </Dialog>
               </div>
               <div className="space-y-4">
-                {members.map((member) => (
+                {/* 7. SAFELY MAPPING over the members array */}
+                {members.filter(Boolean).map((member) => (
                   <div
                     key={member.userId}
                     className="flex items-center justify-between p-4 bg-gray-900/30 rounded-lg hover:bg-gray-900/50 transition-colors"
@@ -337,14 +327,13 @@ export default function ProjectSettings({
                     <div className="flex items-center space-x-4">
                       <div className="w-10 h-10 bg-gray-900/50 rounded-full flex items-center justify-center relative">
                         <span className="text-sm font-normal text-gray-200">
-                          {/* {member.avatar} */}
-                          PP
+                          {member.username.substring(0, 2).toUpperCase()}
                         </span>
                       </div>
                       <div>
                         <div className="text-sm font-normal text-gray-200 capitalize flex items-center space-x-2">
                           <span>{member.username}</span>
-                          {member.role === Roles.OWNER && (
+                          {member.role === "OWNER" && (
                             <Badge className="bg-[#00607a]/20 text-[#00607a] text-xs">
                               owner
                             </Badge>
@@ -355,11 +344,10 @@ export default function ProjectSettings({
                         </div>
                       </div>
                     </div>
-                    {!(member.role === Roles.OWNER) && (
+                    {member.role !== "OWNER" && (
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => removeMember(member.userId)}
                         className="text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
                       >
                         <UserMinus className="h-4 w-4" />
@@ -415,18 +403,12 @@ export default function ProjectSettings({
                         <AlertDialogDescription className="text-gray-300">
                           Are you absolutely sure you want to delete the{" "}
                           <strong className="text-red-300">
-                            {project.name}
+                            {projectName}
                           </strong>{" "}
                           project?
                           <br />
                           <br />
-                          This will permanently delete:
-                          <ul className="list-disc list-inside mt-2 space-y-1 text-sm">
-                            <li>All project tasks and data</li>
-                            <li>Repository connections</li>
-                            <li>Team member access</li>
-                            <li>Project history and analytics</li>
-                          </ul>
+                          This will permanently delete all associated data.
                           <br />
                           <strong className="text-red-400">
                             This action cannot be undone.

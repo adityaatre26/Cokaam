@@ -19,8 +19,16 @@ interface Member {
 
 interface ProjectContextType {
   projectId: string | null;
+  name: string;
+  repoUrl: string;
   members: Member[];
-  setProjectData: (id: string, membersList: Member[]) => void;
+  setProjectData: (
+    id: string,
+    membersList: Member[],
+    name: string,
+    repoUrl: string
+  ) => void;
+  updateMembers: (memberId: string) => void;
   clearProjectData: () => void;
   removeMember: (userId: string) => void;
 }
@@ -29,16 +37,31 @@ const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
 
 export const ProjectProvider = ({ children }) => {
   const [projectId, setProjectId] = useState<string | null>(null);
+  const [name, setName] = useState("");
+  const [repoUrl, setRepoUrl] = useState("");
   const [members, setMembers] = useState<Member[]>([]); // Array of {userId, username, role}
 
-  const setProjectData = (id: string, membersList: Member[]): void => {
+  const setProjectData = (
+    id: string,
+    membersList: Member[],
+    name: string,
+    repoUrl: string
+  ): void => {
     setProjectId(id);
     setMembers(membersList);
+    setName(name);
+    setRepoUrl(repoUrl);
+  };
+
+  const updateMembers = (memberId: string): void => {
+    setMembers(members.filter((member) => member.userId !== memberId));
   };
 
   const clearProjectData = () => {
     setProjectId(null);
     setMembers([]);
+    setName("");
+    setRepoUrl("");
   };
 
   const removeMember = (userId: string) => {
@@ -50,7 +73,10 @@ export const ProjectProvider = ({ children }) => {
       value={{
         projectId,
         members,
+        name,
+        repoUrl,
         setProjectData,
+        updateMembers,
         clearProjectData,
         removeMember,
       }}
