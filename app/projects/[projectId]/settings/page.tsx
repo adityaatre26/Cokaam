@@ -48,11 +48,13 @@ import {
   Plus,
   Mail,
 } from "lucide-react";
+import { useUser } from "@/contexts/UserContext";
+import axios from "axios";
 
 export default function ProjectSettings() {
   const params = useParams();
   const projectId = params.projectId as string;
-
+  const { user } = useUser();
   const { data, isLoading, error } = useProject(projectId);
 
   // This fixes the conditional hook error.
@@ -69,6 +71,33 @@ export default function ProjectSettings() {
       setRepositoryUrl(data.projectInfo.repoUrl || "");
     }
   }, [data]); // The dependency array ensures this runs when `data` is fetched.
+
+  const handleRepoChange = async (newRepoUrl: string) => {
+    // if (newRepoUrl === repositoryUrl) {
+    //   console.log("The repo url is same as the previous one");
+    //   return;
+    // }
+    console.log(
+      "Updating the repo with the following data:",
+      newRepoUrl,
+      user?.id
+    );
+
+    try {
+      const response = await axios.post(
+        `/api/projects/${projectId}/update-repo`,
+        {
+          newUrl: newRepoUrl,
+          UserId: user?.id,
+        }
+      );
+
+      console.log(response);
+    } catch (error) {
+      console.log("Error occured", error);
+      return;
+    }
+  };
 
   // 4. LOADING AND ERROR STATES HANDLED *AFTER* ALL HOOKS
   // This is the correct place for early returns.
@@ -207,13 +236,27 @@ export default function ProjectSettings() {
                   >
                     Project Name
                   </Label>
-                  <Input
-                    id="project-name"
-                    // 6. INPUTS ARE BOUND TO LOCAL STATE, NOT `data`
-                    value={projectName}
-                    onChange={(e) => setProjectName(e.target.value)}
-                    className="bg-gray-900/50 border-gray-800/30 text-gray-200 font-normal focus:border-gray-700"
-                  />
+                  <div className="flex space-x-2">
+                    <Input
+                      id="project-name"
+                      // 6. INPUTS ARE BOUND TO LOCAL STATE, NOT `data`
+                      value={projectName}
+                      onChange={(e) => setProjectName(e.target.value)}
+                      className="bg-gray-900/50 border-gray-800/30 text-gray-200 font-normal focus:border-gray-700"
+                    />
+                    <Button
+                      variant="outline"
+                      style={{
+                        visibility:
+                          projectName !== data.projectInfo.name
+                            ? "visible"
+                            : "hidden",
+                      }}
+                      className="border-gray-800 text-gray-300 hover:text-white hover:border-gray-700 transition-colors"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
                 <div>
                   <Label
@@ -231,6 +274,13 @@ export default function ProjectSettings() {
                     />
                     <Button
                       variant="outline"
+                      style={{
+                        visibility:
+                          repositoryUrl !== data.projectInfo.repoUrl
+                            ? "visible"
+                            : "hidden",
+                      }}
+                      onClick={() => handleRepoChange(repositoryUrl)}
                       className="border-gray-800 text-gray-300 hover:text-white hover:border-gray-700 transition-colors"
                     >
                       <ExternalLink className="h-4 w-4" />

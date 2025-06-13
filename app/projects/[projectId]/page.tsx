@@ -64,41 +64,6 @@ export default function ProjectDetail({
 
   const { data, isLoading, error } = useProject(unwrappedParams.projectId);
 
-  // useEffect(() => {
-  //   const fetchProject = async () => {
-  //     try {
-  //       const response = await axios.get(
-  //         `/api/${unwrappedParams.projectId}/get-projects`
-  //       );
-  //       const projectData = response.data.data[0];
-  //       setProject(projectData.projectInfo);
-  //       setMembers(projectData.members);
-  //       setTasks(projectData.activeTasks);
-  //       setCommits(projectData.recentCommits);
-  //       setProjectData(
-  //         unwrappedParams.projectId,
-  //         projectData.members,
-  //         projectData.projectInfo.name,
-  //         projectData.projectInfo.repoUrl
-  //       );
-
-  //       // console.log("This is the project that has been initialised", project);
-
-  //       // Debug logging
-  //       console.group("Project Data Debug Info");
-  //       console.log("Project Info:", projectData.projectInfo);
-  //       console.log("Members:", projectData.members);
-  //       console.log("Active Tasks:", projectData.activeTasks);
-  //       console.log("Recent Commits:", projectData.recentCommits);
-  //       console.groupEnd();
-  //     } catch (error) {
-  //       console.error("Error fetching project information:", error);
-  //     }
-  //   };
-
-  //   fetchProject();
-  // }, [unwrappedParams.projectId]);
-
   useEffect(() => {
     if (data) {
       console.log("Data from react query", data);

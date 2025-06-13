@@ -26,32 +26,44 @@ export async function POST(
       auth: user.accessToken,
     });
 
-    const testrepo = await octokit.rest.repos.get({
-      owner: repoOwner,
-      repo: repoName,
-    });
-    console.log("testrepo", testrepo);
+    // const testrepo = await octokit.rest.repos.get({
+    //   owner: repoOwner,
+    //   repo: repoName,
+    // });
+    // console.log("testrepo", testrepo);
 
-    const webhook = await octokit.repos.createWebhook({
-      owner: repoOwner,
-      repo: repoName,
-      config: {
-        url: process.env.WEBHOOK_URL,
-        content_type: "json",
-        secret: process.env.WEBHOOK_SECRET,
-      },
-      events: ["push"],
-    });
+    try {
+      const webhook = await octokit.repos.createWebhook({
+        owner: repoOwner,
+        repo: repoName,
+        config: {
+          url: process.env.WEBHOOK_URL,
+          content_type: "json",
+          secret: process.env.WEBHOOK_SECRET,
+        },
+        events: ["push"],
+      });
 
-    await prisma.repos.create({
-      data: {
-        repoName,
-        repoOwner,
-        repoUrl,
-        webhookId: webhook.data.id,
-        projectId: id,
-      },
-    });
+      await prisma.repos.create({
+        data: {
+          repoName,
+          repoOwner,
+          repoUrl,
+          webhookId: webhook.data.id,
+          projectId: id,
+        },
+      });
+    } catch (error) {
+      console.log("Error occured while creating the webhook", error);
+      return new Response(
+        JSON.stringify({
+          error,
+        }),
+        {
+          status: 500,
+        }
+      );
+    }
 
     return new Response("Repo linked successfully", { status: 200 });
   } catch (error) {

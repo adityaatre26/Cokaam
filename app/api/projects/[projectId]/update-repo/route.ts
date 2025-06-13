@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import axios from "axios";
+import { Octokit } from "@octokit/rest";
 // Update repo will come here
 const prisma = new PrismaClient();
 
@@ -20,10 +21,52 @@ export async function POST(
   const { projectId } = await params;
   const { newUrl, UserId } = await request.json();
 
-  const { owner, repo } = parseRepoUrl(newUrl);
+  // Check if user owns the project
+  const project = await prisma.project.findUnique({
+    where: {
+      ProjectId: projectId,
+      ownerId: UserId,
+    },
+  });
 
+  if (!project) {
+    return new Response(
+      "Unauthorized: You don't have permission to modify this project or the user wasn't found",
+      {
+        status: 403,
+      }
+    );
+  }
+
+  const userData = await prisma.user.findUnique({
+    where: {
+      UserId: UserId,
+    },
+  });
+
+  const octokit = new Octokit({
+    auth: userData?.accessToken,
+  });
+
+  const { owner, repo } = parseRepoUrl(newUrl);
   if (!owner || !repo) {
     return new Response("Invalid repository URL", { status: 400 });
+  }
+
+  try {
+    const testrepo = await octokit.rest.repos.get({
+      owner: owner,
+      repo: repo,
+    });
+  } catch (error: any) {
+    if (error.status === 404) {
+      console.log("Repo was not found");
+      return new Response("Repo not found", { status: 404 });
+    } else {
+      // Handle other errors
+      console.error("Error fetching repo:", error);
+      return new Response("Internal Server Error", { status: 500 });
+    }
   }
 
   const repoTBD = await prisma.repos.findUnique({
