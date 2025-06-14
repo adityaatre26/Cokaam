@@ -81,6 +81,7 @@ export async function DELETE(
       where: {
         projectId: projectId,
         assigneeId: memberToRemoveId,
+        status: "IN_PROGRESS",
       },
       data: {
         assigneeId: null,

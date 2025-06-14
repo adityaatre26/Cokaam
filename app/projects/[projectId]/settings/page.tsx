@@ -7,9 +7,8 @@ import { motion } from "framer-motion";
 
 // Custom Hooks & Context
 import { useProject } from "@/hooks/useProject";
-// import { Roles } from "@/contexts/ProjectContext"; // This was unused, so I've commented it out.
 
-// UI Components (assuming these paths are correct)
+// UI Components
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -47,63 +46,113 @@ import {
   ExternalLink,
   Plus,
   Mail,
+  Loader2,
 } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
-import axios from "axios";
 
 export default function ProjectSettings() {
   const params = useParams();
   const projectId = params.projectId as string;
   const { user } = useUser();
-  const { data, isLoading, error } = useProject(projectId);
 
-  // This fixes the conditional hook error.
+  // Use the enhanced hook with mutations
+  const {
+    data,
+    isLoading,
+    error,
+    addMember,
+    isAddingMember,
+    addMemberError,
+    removeMember,
+    isRemovingMember,
+    removeMemberError,
+    updateRepo,
+    isUpdatingRepo,
+    updateRepoError,
+    updateProject,
+    isProjectUpdating,
+    updateProjectError,
+  } = useProject(projectId);
+
   const [projectName, setProjectName] = useState("");
   const [repositoryUrl, setRepositoryUrl] = useState("");
   const [memberEmail, setMemberEmail] = useState("");
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
 
-  // 3. `useEffect` TO SYNC FETCHED DATA WITH LOCAL STATE
-  // This runs only when `data` changes (i.e., after it loads).
+  // Sync fetched data with local state
   useEffect(() => {
     if (data?.projectInfo) {
       setProjectName(data.projectInfo.name || "");
       setRepositoryUrl(data.projectInfo.repoUrl || "");
     }
-  }, [data]); // The dependency array ensures this runs when `data` is fetched.
+  }, [data]);
 
   const handleRepoChange = async (newRepoUrl: string) => {
-    // if (newRepoUrl === repositoryUrl) {
-    //   console.log("The repo url is same as the previous one");
-    //   return;
-    // }
-    console.log(
-      "Updating the repo with the following data:",
-      newRepoUrl,
-      user?.id
-    );
+    if (!user?.id) {
+      console.log("User not authenticated");
+      return;
+    }
+
+    updateRepo({
+      projectId,
+      newUrl: newRepoUrl,
+      userId: user.id,
+    });
+  };
+
+  const handleAddMember = async () => {
+    if (!user?.id) {
+      console.log("User not authenticated");
+      return;
+    }
+
+    if (!memberEmail.trim()) {
+      console.log("Email is required");
+      return;
+    }
 
     try {
-      const response = await axios.post(
-        `/api/projects/${projectId}/update-repo`,
-        {
-          newUrl: newRepoUrl,
-          UserId: user?.id,
-        }
-      );
+      await addMember({
+        projectId,
+        userId: user.id,
+        email: memberEmail.trim(),
+      });
 
-      console.log(response);
+      // Reset form and close dialog on success
+      setMemberEmail("");
+      setIsInviteDialogOpen(false);
     } catch (error) {
-      console.log("Error occured", error);
-      return;
+      console.error("Failed to add member:", error);
     }
   };
 
-  // 4. LOADING AND ERROR STATES HANDLED *AFTER* ALL HOOKS
-  // This is the correct place for early returns.
+  const handleRemoveMember = async (userTBD: string) => {
+    if (!user?.id) {
+      console.log("User not authenticated");
+      return;
+    }
+
+    removeMember({
+      projectId,
+      userId: user.id,
+      memberToRemoveId: userTBD,
+    });
+  };
+
+  const handleProjectChange = async (newName, description) => {
+    updateProject({
+      projectId,
+      userId: user.id,
+      newName,
+      description,
+    });
+  };
+
+  // Loading and error states
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-black text-white">
+        <Loader2 className="h-6 w-6 animate-spin mr-2" />
         Loading project settings...
       </div>
     );
@@ -125,30 +174,16 @@ export default function ProjectSettings() {
     );
   }
 
-  // Helper function for clarity
   const saveChanges = () => {
     console.log("Saving changes:", { projectName, repositoryUrl });
-    // Here you would typically call a mutation to update the project
-    // e.g., updateProject({ projectId, name: projectName, repoUrl: repositoryUrl });
+    // Add project name update mutation if needed
   };
 
   const deleteProject = () => {
     console.log("Deleting project:", projectId);
-    // Here you would call a mutation to delete the project
-    // e.g., deleteProject({ projectId });
+    // Add delete project mutation if needed
   };
 
-  const inviteMember = () => {
-    if (memberEmail.trim()) {
-      console.log("Inviting member:", memberEmail);
-      // Here you would call a mutation to invite a member
-      // e.g., inviteProjectMember({ projectId, email: memberEmail });
-      setMemberEmail("");
-      setIsInviteDialogOpen(false);
-    }
-  };
-
-  // 5. DEFENSIVE PROGRAMMING for the members list
   const members = data.members || [];
 
   return (
@@ -170,7 +205,6 @@ export default function ProjectSettings() {
                 className="text-gray-300 hover:text-white transition-colors"
               >
                 <span className="font-normal text-sm capitalize">
-                  {/* Now using the local state, which is synced from `data` */}
                   {projectName}
                 </span>
               </Link>
@@ -220,6 +254,24 @@ export default function ProjectSettings() {
         </motion.div>
 
         <div className="space-y-8">
+          {/* Error Messages */}
+          {(addMemberError ||
+            removeMemberError ||
+            updateRepoError ||
+            updateProjectError) && (
+            <div className="bg-red-950/20 border border-red-900/30 rounded-lg p-4">
+              <div className="flex items-center">
+                <AlertTriangle className="h-4 w-4 text-red-400 mr-2" />
+                <span className="text-red-400 text-sm">
+                  {addMemberError && "Failed to add member. "}
+                  {removeMemberError && "Failed to remove member. "}
+                  {updateRepoError && "Failed to update repository. "}
+                  Please try again.
+                </span>
+              </div>
+            </div>
+          )}
+
           {/* General Settings */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -239,7 +291,6 @@ export default function ProjectSettings() {
                   <div className="flex space-x-2">
                     <Input
                       id="project-name"
-                      // 6. INPUTS ARE BOUND TO LOCAL STATE, NOT `data`
                       value={projectName}
                       onChange={(e) => setProjectName(e.target.value)}
                       className="bg-gray-900/50 border-gray-800/30 text-gray-200 font-normal focus:border-gray-700"
@@ -252,9 +303,15 @@ export default function ProjectSettings() {
                             ? "visible"
                             : "hidden",
                       }}
+                      onClick={() => handleProjectChange(projectName, "")}
                       className="border-gray-800 text-gray-300 hover:text-white hover:border-gray-700 transition-colors"
+                      disabled={isProjectUpdating}
                     >
-                      <ExternalLink className="h-4 w-4" />
+                      {isUpdatingRepo ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <ExternalLink className="h-4 w-4" />
+                      )}
                     </Button>
                   </div>
                 </div>
@@ -271,6 +328,7 @@ export default function ProjectSettings() {
                       value={repositoryUrl}
                       onChange={(e) => setRepositoryUrl(e.target.value)}
                       className="bg-gray-900/50 border-gray-800/30 text-gray-200 font-normal focus:border-gray-700"
+                      disabled={isUpdatingRepo}
                     />
                     <Button
                       variant="outline"
@@ -281,9 +339,14 @@ export default function ProjectSettings() {
                             : "hidden",
                       }}
                       onClick={() => handleRepoChange(repositoryUrl)}
+                      disabled={isUpdatingRepo}
                       className="border-gray-800 text-gray-300 hover:text-white hover:border-gray-700 transition-colors"
                     >
-                      <ExternalLink className="h-4 w-4" />
+                      {isUpdatingRepo ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <ExternalLink className="h-4 w-4" />
+                      )}
                     </Button>
                   </div>
                   <p className="text-xs text-gray-500 mt-2">
@@ -312,16 +375,23 @@ export default function ProjectSettings() {
                   onOpenChange={setIsInviteDialogOpen}
                 >
                   <DialogTrigger asChild>
-                    <Button className="bg-[#00607a] hover:bg-[#007a9a] text-white font-normal transition-all duration-300 hover:px-6">
-                      <Plus className="h-4 w-4 mr-2" />
-                      invite member
+                    <Button
+                      className="bg-[#00607a] hover:bg-[#007a9a] text-white font-normal transition-all duration-300 hover:px-6"
+                      disabled={isAddingMember}
+                    >
+                      {isAddingMember ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Plus className="h-4 w-4 mr-2" />
+                      )}
+                      add member
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="bg-gray-950 border-gray-800 text-white">
                     <DialogHeader>
                       <DialogTitle className="text-xl font-extralight flex items-center">
                         <Mail className="h-5 w-5 mr-2" />
-                        Invite Team Member
+                        Add Team Member
                       </DialogTitle>
                       <DialogDescription className="text-gray-300">
                         Enter the email address of the person you`d like to
@@ -343,9 +413,12 @@ export default function ProjectSettings() {
                           value={memberEmail}
                           onChange={(e) => setMemberEmail(e.target.value)}
                           className="bg-gray-900/50 border-gray-800/30 text-gray-200 font-normal focus:border-gray-700"
-                          onKeyPress={(e) =>
-                            e.key === "Enter" && inviteMember()
+                          onKeyDown={(e) =>
+                            e.key === "Enter" &&
+                            !isAddingMember &&
+                            handleAddMember()
                           }
+                          disabled={isAddingMember}
                         />
                       </div>
                     </div>
@@ -354,21 +427,29 @@ export default function ProjectSettings() {
                         variant="outline"
                         onClick={() => setIsInviteDialogOpen(false)}
                         className="border-gray-800 text-gray-300 hover:text-white hover:border-gray-700 transition-colors"
+                        disabled={isAddingMember}
                       >
                         Cancel
                       </Button>
                       <Button
-                        onClick={inviteMember}
+                        onClick={handleAddMember}
                         className="bg-[#00607a] hover:bg-[#007a9a] text-white font-normal transition-all duration-300 hover:px-6"
+                        disabled={isAddingMember || !memberEmail.trim()}
                       >
-                        Send Invitation
+                        {isAddingMember ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Sending...
+                          </>
+                        ) : (
+                          "Send Invitation"
+                        )}
                       </Button>
                     </DialogFooter>
                   </DialogContent>
                 </Dialog>
               </div>
               <div className="space-y-4">
-                {/* 7. SAFELY MAPPING over the members array */}
                 {members.filter(Boolean).map((member) => (
                   <div
                     key={member.userId}
@@ -399,8 +480,14 @@ export default function ProjectSettings() {
                         variant="ghost"
                         size="sm"
                         className="text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                        onClick={() => handleRemoveMember(member.userId)}
+                        disabled={isRemovingMember}
                       >
-                        <UserMinus className="h-4 w-4" />
+                        {isRemovingMember ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <UserMinus className="h-4 w-4" />
+                        )}
                       </Button>
                     )}
                   </div>
