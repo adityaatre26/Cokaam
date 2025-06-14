@@ -92,6 +92,17 @@ export async function GET(
       },
     });
 
+    if (!projects || projects.length === 0) {
+      return new Response(
+        JSON.stringify({
+          status: "error",
+          message: "Project not found",
+          data: null,
+        }),
+        { status: 404 }
+      );
+    }
+
     // Transform the data to a more structured format
     const formattedProjects = projects.map((project) => ({
       projectInfo: {

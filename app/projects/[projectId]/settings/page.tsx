@@ -53,7 +53,7 @@ import { useUser } from "@/contexts/UserContext";
 export default function ProjectSettings() {
   const params = useParams();
   const projectId = params.projectId as string;
-  const { user } = useUser();
+  const { user, deleteProjectContext } = useUser();
 
   // Use the enhanced hook with mutations
   const {
@@ -72,6 +72,9 @@ export default function ProjectSettings() {
     updateProject,
     isProjectUpdating,
     updateProjectError,
+    deleteProject,
+    deleteProjectError,
+    deleteProjectUpdating,
   } = useProject(projectId);
 
   const [projectName, setProjectName] = useState("");
@@ -139,13 +142,30 @@ export default function ProjectSettings() {
     });
   };
 
-  const handleProjectChange = async (newName, description) => {
+  const handleProjectChange = async (
+    newName: string | "",
+    description: string | ""
+  ) => {
     updateProject({
       projectId,
-      userId: user.id,
+      userId: user!.id,
       newName,
       description,
     });
+  };
+
+  const handleDeleteProject = async () => {
+    if (!user?.id) {
+      console.log("User not authenticated");
+      return;
+    }
+
+    await deleteProject({
+      projectId,
+      userId: user.id,
+    });
+
+    deleteProjectContext(projectId);
   };
 
   // Loading and error states
@@ -177,11 +197,6 @@ export default function ProjectSettings() {
   const saveChanges = () => {
     console.log("Saving changes:", { projectName, repositoryUrl });
     // Add project name update mutation if needed
-  };
-
-  const deleteProject = () => {
-    console.log("Deleting project:", projectId);
-    // Add delete project mutation if needed
   };
 
   const members = data.members || [];
@@ -258,7 +273,8 @@ export default function ProjectSettings() {
           {(addMemberError ||
             removeMemberError ||
             updateRepoError ||
-            updateProjectError) && (
+            updateProjectError ||
+            deleteProjectError) && (
             <div className="bg-red-950/20 border border-red-900/30 rounded-lg p-4">
               <div className="flex items-center">
                 <AlertTriangle className="h-4 w-4 text-red-400 mr-2" />
@@ -525,9 +541,14 @@ export default function ProjectSettings() {
                     <AlertDialogTrigger asChild>
                       <Button
                         variant="outline"
+                        disabled={deleteProjectUpdating}
                         className="border-red-800 text-red-400 hover:bg-red-500/10 hover:text-red-300 hover:border-red-700 transition-colors"
                       >
-                        <Trash2 className="h-4 w-4 mr-2" />
+                        {deleteProjectUpdating ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4 mr-2" />
+                        )}
                         delete project
                       </Button>
                     </AlertDialogTrigger>
@@ -557,7 +578,7 @@ export default function ProjectSettings() {
                           Cancel
                         </AlertDialogCancel>
                         <AlertDialogAction
-                          onClick={deleteProject}
+                          onClick={handleDeleteProject}
                           className="bg-red-600 hover:bg-red-700 text-white font-normal transition-all duration-300"
                         >
                           Yes, Delete Project

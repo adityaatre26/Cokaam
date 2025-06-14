@@ -25,6 +25,7 @@ interface UserContextType {
   isLoading: boolean;
   fetchUserData: () => Promise<void>;
   addProject: (project: Project) => void;
+  deleteProjectContext: (projectId: string) => void;
   logOut: () => void;
 }
 
@@ -90,6 +91,12 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     setProjects((prevProjects) => [...prevProjects, project]);
   };
 
+  const deleteProjectContext = (projectId: string) => {
+    setProjects((prevProjects) =>
+      prevProjects.filter((project) => project.id !== projectId)
+    );
+  };
+
   const logout = () => {
     console.log("🚪 Logging out, clearing context");
     setUser(null);
@@ -108,6 +115,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     isLoading: status === "loading",
     fetchUserData,
     addProject,
+    deleteProjectContext,
     logOut: logout,
   };
 

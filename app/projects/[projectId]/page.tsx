@@ -34,6 +34,7 @@ import {
 } from "@/types/projectTypes";
 import { useUser } from "@/contexts/UserContext";
 import { useProject } from "@/hooks/useProject";
+import { useRouter } from "next/navigation";
 // import { useProject } from "@/contexts/ProjectContext";
 
 interface paramInterface {
@@ -61,7 +62,7 @@ export default function ProjectDetail({
   const [members, setMembers] = useState<MembershipInterface[]>([]);
   const [tasks, setTasks] = useState<TaskInterface[]>([]);
   const [commit, setCommits] = useState<CommitInterface[]>([]);
-
+  const router = useRouter();
   const { data, isLoading, error } = useProject(unwrappedParams.projectId);
 
   useEffect(() => {

@@ -6,6 +6,8 @@ import {
   MembershipInterface,
   TaskInterface,
 } from "@/types/projectTypes";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 interface ProjectData {
   projectInfo: ProjectInterface;
@@ -39,8 +41,16 @@ interface UpdateProjectParams {
   userId: string;
 }
 
+interface DeleteProjectParams {
+  projectId: string;
+  userId: string;
+}
+
 const fetchProject = async (projectId: string): Promise<ProjectData> => {
   const response = await axios.get(`/api/${projectId}/get-projects`);
+  if (!response.data.data || response.data.data.length === 0) {
+    throw new Error("Project not found");
+  }
   return response.data.data[0];
 };
 
@@ -100,15 +110,43 @@ const updateProject = async ({
   return response.data;
 };
 
+const deleteProject = async ({ projectId, userId }: DeleteProjectParams) => {
+  const response = await axios.delete(
+    `/api/projects/${projectId}/delete-project`,
+    {
+      data: {
+        projectId,
+        UserId: userId,
+      },
+    }
+  );
+
+  return response.data;
+};
+
 export const useProject = (projectId: string) => {
   const queryClient = useQueryClient();
-
+  const router = useRouter();
   const projectQuery = useQuery({
     queryKey: ["project", projectId],
     queryFn: () => fetchProject(projectId),
     enabled: !!projectId,
     staleTime: 5 * 60 * 1000,
   });
+
+  useEffect(() => {
+    if (projectQuery.error) {
+      // Check if it's a "Project not found" error
+      const errorMessage = projectQuery.error?.message;
+      if (
+        errorMessage === "Project not found" ||
+        (axios.isAxiosError(projectQuery.error) &&
+          projectQuery.error.response?.status === 404)
+      ) {
+        router.push(`/projects/${projectId}/not-found`);
+      }
+    }
+  }, [projectQuery.error, projectId, router]);
 
   const addMemberMutation = useMutation({
     mutationFn: addMember,
@@ -154,6 +192,25 @@ export const useProject = (projectId: string) => {
     },
   });
 
+  const deleteProjectMutation = useMutation({
+    mutationFn: deleteProject,
+    onSuccess: () => {
+      // Remove the project from cache
+      queryClient.removeQueries({ queryKey: ["project", projectId] });
+
+      // 3. Clear any related queries that might reference this project
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          return query.queryKey.some(
+            (key) => typeof key === "string" && key.includes(projectId)
+          );
+        },
+      });
+
+      router.push("/dashboard");
+    },
+  });
+
   return {
     // Query data
     data: projectQuery.data,
@@ -179,5 +236,9 @@ export const useProject = (projectId: string) => {
     updateProject: updateProjectMutation.mutate,
     isProjectUpdating: updateProjectMutation.isPending,
     updateProjectError: updateProjectMutation.error,
+
+    deleteProject: deleteProjectMutation.mutate,
+    deleteProjectUpdating: updateProjectMutation.isPending,
+    deleteProjectError: updateProjectMutation.error,
   };
 };
