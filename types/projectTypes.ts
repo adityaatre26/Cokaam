@@ -3,6 +3,7 @@ export interface ProjectInterface {
   name: string;
   description: string | null;
   repoUrl: string;
+  ownerId: string;
 }
 
 export interface MembershipInterface {

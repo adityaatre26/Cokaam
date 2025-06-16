@@ -325,18 +325,20 @@ export default function ProjectDetail({
               </span>
             </div>
 
-            <div className="flex items-center space-x-4">
-              <Button
-                asChild
-                variant="ghost"
-                className="text-gray-300 hover:text-white hover:bg-gray-900/50 font-normal text-sm transition-all duration-300 hover:px-6"
-              >
-                <Link href={`/projects/${project?.projectId}/settings`}>
-                  <Settings className="h-4 w-4 mr-2" />
-                  settings
-                </Link>
-              </Button>
-            </div>
+            {data?.projectInfo.ownerId === user?.id && (
+              <div className="flex items-center space-x-4">
+                <Button
+                  asChild
+                  variant="ghost"
+                  className="text-gray-300 hover:text-white hover:bg-gray-900/50 font-normal text-sm transition-all duration-300 hover:px-6"
+                >
+                  <Link href={`/projects/${project?.projectId}/settings`}>
+                    <Settings className="h-4 w-4 mr-2" />
+                    settings
+                  </Link>
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </nav>

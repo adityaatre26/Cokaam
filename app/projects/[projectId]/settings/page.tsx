@@ -38,7 +38,6 @@ import {
 import {
   Settings,
   ArrowLeft,
-  Save,
   Trash2,
   UserMinus,
   GitBranch,
@@ -194,11 +193,6 @@ export default function ProjectSettings() {
     );
   }
 
-  const saveChanges = () => {
-    console.log("Saving changes:", { projectName, repositoryUrl });
-    // Add project name update mutation if needed
-  };
-
   const members = data.members || [];
 
   return (
@@ -227,16 +221,6 @@ export default function ProjectSettings() {
               <span className="text-gray-300 font-normal text-sm">
                 settings
               </span>
-            </div>
-
-            <div className="flex items-center space-x-4">
-              <Button
-                onClick={saveChanges}
-                className="bg-[#00607a] hover:bg-[#007a9a] text-white font-normal text-sm transition-all duration-300 hover:px-6"
-              >
-                <Save className="h-4 w-4 mr-2" />
-                save changes
-              </Button>
             </div>
           </div>
         </div>

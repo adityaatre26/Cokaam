@@ -32,6 +32,7 @@ export async function GET(
         ProjectId: true,
         name: true,
         description: true,
+        ownerId: true,
         memberships: {
           select: {
             role: true,
@@ -110,6 +111,7 @@ export async function GET(
         name: project.name,
         description: project.description || null,
         repoUrl: project.githubRepo?.repoUrl,
+        ownerId: project.ownerId,
       },
       members: project.memberships.map((member) => ({
         userId: member.user.UserId,

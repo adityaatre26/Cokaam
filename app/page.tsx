@@ -14,12 +14,23 @@ import {
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { signIn, signOut, useSession } from "next-auth/react";
-// import { useRouter } from "next/navigation";
 import { useUser } from "@/contexts/UserContext";
+import { useEffect } from "react";
+import { useSearchParams } from "next/navigation";
+import { toast } from "sonner";
 
 export default function LandingPage() {
   const { data: session, status } = useSession();
   const { user, projects, isAuthenticated, isLoading, logOut } = useUser();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl");
+  useEffect(() => {
+    setTimeout(() => {
+      if (callbackUrl) {
+        toast.error("Please log in first to access project routes");
+      }
+    }, 1000);
+  }, [callbackUrl]);
 
   // Removed redundant authentication check as we're using UserContext
 
