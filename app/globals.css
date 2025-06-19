@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Darker+Grotesque:wght@300..900&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap");
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -45,7 +46,7 @@
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
+  --background: #08090a;
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
@@ -79,7 +80,7 @@
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
+  --background: #08090a;
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
   --card-foreground: oklch(0.985 0 0);
@@ -118,5 +119,24 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+@layer utilities {
+  .font-primary {
+    font-family: "Plus Jakarta Sans", sans-serif;
+  }
+  .font-darker {
+    font-family: "Darker Grotesque";
+  }
+  .custom-dashed-border {
+    border-bottom: 1px dashed #6b7280; /* fallback for browsers not supporting border-image */
+    border-image: repeating-linear-gradient(
+        to right,
+        #6b7280 0 16px,
+        /* dash color and length */ transparent 16px 28px
+          /* gap color and length */
+      )
+      100% 1;
+    border-bottom-width: 1px;
   }
 }

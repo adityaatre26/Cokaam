@@ -17,8 +17,15 @@ export const authOptions = {
       },
     }),
   ],
+  pages: {
+    signIn: "/",
+    newUser: "/", // New users will be directed here after sign in
+  },
 
   callbacks: {
+    async redirect({ baseUrl }: { baseUrl: string }) {
+      return baseUrl + "/";
+    },
     async signIn({ user, account }) {
       const existingUser = await prisma.user.findUnique({
         where: {

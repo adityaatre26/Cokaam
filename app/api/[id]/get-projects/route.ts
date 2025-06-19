@@ -3,7 +3,8 @@
 // Returns a detailed object containing project information, members, tasks, and recent commits
 
 import { PrismaClient } from "@prisma/client";
-
+import { getServerSession } from "next-auth";
+import { signOut } from "next-auth/react";
 const prisma = new PrismaClient();
 
 export async function GET(
@@ -11,6 +12,37 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   const { id } = params;
+  const data = await getServerSession();
+
+  if (!data?.user) {
+    console.log("User is not authenticated");
+    return new Response(
+      JSON.stringify({
+        status: "error",
+        message: "Please log in",
+        data: null,
+      }),
+      { status: 401 }
+    );
+  }
+
+  const user = await prisma.user.findUnique({
+    where: {
+      username: data.user.name,
+    },
+  });
+
+  if (!user) {
+    await signOut();
+    return new Response(
+      JSON.stringify({
+        status: "error",
+        message: "Login required",
+        data: null,
+      }),
+      { status: 400 }
+    );
+  }
 
   if (!id) {
     return new Response(
@@ -27,6 +59,13 @@ export async function GET(
     const projects = await prisma.project.findMany({
       where: {
         ProjectId: id,
+        memberships: {
+          some: {
+            user: {
+              username: data.user.name,
+            },
+          },
+        },
       },
       select: {
         ProjectId: true,
@@ -97,7 +136,7 @@ export async function GET(
       return new Response(
         JSON.stringify({
           status: "error",
-          message: "Project not found",
+          message: "Project not found or you're not part of the project",
           data: null,
         }),
         { status: 404 }
