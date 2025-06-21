@@ -34,7 +34,6 @@ import {
 } from "@/types/projectTypes";
 import { useUser } from "@/contexts/UserContext";
 import { useProject } from "@/hooks/useProject";
-import { useRouter } from "next/navigation";
 // import { useProject } from "@/contexts/ProjectContext";
 
 interface paramInterface {
@@ -62,8 +61,7 @@ export default function ProjectDetail({
   const [members, setMembers] = useState<MembershipInterface[]>([]);
   const [tasks, setTasks] = useState<TaskInterface[]>([]);
   const [commit, setCommits] = useState<CommitInterface[]>([]);
-  const router = useRouter();
-  const { data, isLoading, error } = useProject(unwrappedParams.projectId);
+  const { data } = useProject(unwrappedParams.projectId);
 
   useEffect(() => {
     if (data) {
@@ -79,7 +77,7 @@ export default function ProjectDetail({
   // if (error) return <div>Error loading project</div>;
 
   useEffect(() => {
-    const socket = io("http://localhost:4000");
+    const socket = io(`${process.env.NEXT_PUBLIC_WEBSOCKET_URL}`);
 
     socket.on("connect", () => {
       socket.emit("join_project", unwrappedParams.projectId);

@@ -54,11 +54,11 @@ export async function POST(
   }
 
   try {
-    const testrepo = await octokit.rest.repos.get({
+    await octokit.rest.repos.get({
       owner: owner,
       repo: repo,
     });
-  } catch (error: any) {
+  } catch (error) {
     if (error.status === 404) {
       console.log("Repo was not found");
       return new Response("Repo not found", { status: 404 });

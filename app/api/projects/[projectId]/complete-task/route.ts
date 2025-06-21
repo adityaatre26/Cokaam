@@ -35,10 +35,13 @@ export async function POST(req: Request) {
     });
 
     console.log("Task updated successfully:", result);
-    await axios.post("http://localhost:4000/emit-completeTask", {
-      projectId: result.projectId,
-      taskId: result.TaskId,
-    });
+    await axios.post(
+      `${process.env.NEXT_PUBLIC_WEBSOCKET_URL}/emit-completeTask`,
+      {
+        projectId: result.projectId,
+        taskId: result.TaskId,
+      }
+    );
 
     console.log("Task sent to socket socket server successfully");
 

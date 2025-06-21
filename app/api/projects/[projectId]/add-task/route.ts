@@ -26,19 +26,22 @@ export async function POST(
     });
 
     try {
-      await axios.post("http://localhost:4000/emit-addtask", {
-        projectId,
-        task: {
-          TaskId: newTask.TaskId,
-          title: newTask.title,
-          description: newTask.description,
-          createdAt: newTask.createdAt,
-          updatedAt: newTask.updatedAt,
-          priority: newTask.priority,
-          status: newTask.status,
-          creator: newTask.creatorId,
-        },
-      });
+      await axios.post(
+        `${process.env.NEXT_PUBLIC_WEBSOCKET_URL}/emit-addtask`,
+        {
+          projectId,
+          task: {
+            TaskId: newTask.TaskId,
+            title: newTask.title,
+            description: newTask.description,
+            createdAt: newTask.createdAt,
+            updatedAt: newTask.updatedAt,
+            priority: newTask.priority,
+            status: newTask.status,
+            creator: newTask.creatorId,
+          },
+        }
+      );
       console.log("Commit sent to socket server successfully");
     } catch (err) {
       console.error("Error sending commit to socket server:", err);

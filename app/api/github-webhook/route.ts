@@ -90,7 +90,7 @@ export async function POST(req: Request) {
       },
     });
     try {
-      await axios.post("http://localhost:4000/emit-commit", {
+      await axios.post(`${process.env.NEXT_PUBLIC_WEBSOCKET_URL}/emit-commit`, {
         projectId: newcum.projectId,
         commitId: newcum.id,
         message: latestCommit.message,
@@ -104,10 +104,13 @@ export async function POST(req: Request) {
 
     if (matching) {
       try {
-        await axios.post("http://localhost:4000/emit-completeTask", {
-          projectId: matching.projectId,
-          taskId: matching.TaskId,
-        });
+        await axios.post(
+          `${process.env.NEXT_PUBLIC_WEBSOCKET_URL}/emit-completeTask`,
+          {
+            projectId: matching.projectId,
+            taskId: matching.TaskId,
+          }
+        );
         console.log("Task sent to socket server successfully");
       } catch (error) {
         console.error("Error sending task to socket server:", error);

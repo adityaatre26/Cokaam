@@ -2,7 +2,7 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-async function fetchGithubRepo(repoUrl: string) {
+async function fetchGithubRepo(repoUrl: string, accessToken: string | null) {
   const m = repoUrl.match(
     /^https:\/\/github\.com\/([^/]+)\/([^/]+?)(?:\.git)?(?:\/)?(?:[#?].*)?$/i
   );
@@ -11,7 +11,7 @@ async function fetchGithubRepo(repoUrl: string) {
   const [, owner, repo] = m;
   const r = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
     headers: {
-      Authorization: `Bearer ${process.env.GITHUB_TOKEN ?? ""}`,
+      Authorization: `Bearer ${accessToken ?? ""}`,
     },
   });
   if (!r.ok) {
@@ -30,9 +30,21 @@ export async function POST(request: Request) {
   if (!name || !UserId || !repoUrl) {
     return new Response("Missing required fields", { status: 400 });
   }
+  const user = await prisma.user.findUnique({
+    where: {
+      UserId: UserId,
+    },
+  });
+  if (!user) {
+    console.log("User not found");
+    return new Response("User not found", { status: 404 });
+  }
 
   try {
-    const { repoName, repoOwner } = await fetchGithubRepo(repoUrl);
+    const { repoName, repoOwner } = await fetchGithubRepo(
+      repoUrl,
+      user.accessToken
+    );
     const res = await prisma.$transaction(
       async (db) => {
         // Create a new project

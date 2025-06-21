@@ -132,7 +132,7 @@ export default function Dashboard() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
         >
-          {stats.map((stat, index) => (
+          {stats.map((stat) => (
             <Card
               key={stat.label}
               className="bg-gray-950/50 border-gray-800/30 p-6 hover:bg-gray-900/30 transition-all duration-300 min-h-[120px] flex flex-col justify-between"

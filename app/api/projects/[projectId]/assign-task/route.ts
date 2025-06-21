@@ -107,12 +107,15 @@ export async function POST(req: Request) {
       status: newStatus,
     });
 
-    await axios.post("http://localhost:4000/emit-assignTask", {
-      projectId: result.projectId,
-      taskId: result.TaskId,
-      assignee: assigneeData,
-      status: newStatus,
-    });
+    await axios.post(
+      `${process.env.NEXT_PUBLIC_WEBSOCKET_URL}/emit-assignTask`,
+      {
+        projectId: result.projectId,
+        taskId: result.TaskId,
+        assignee: assigneeData,
+        status: newStatus,
+      }
+    );
 
     return new Response(
       JSON.stringify({
