@@ -25,12 +25,15 @@ export async function DELETE(request: Request, { params }) {
       return new Response("Project not linked to a repo", { status: 404 });
     }
 
-    await axios.delete(`${process.env.WEBSITE_URL}/${projectId}/delete-repo`, {
-      data: {
-        UserId: UserId,
-        repoId: repoTBD.id,
-      },
-    });
+    await axios.delete(
+      `${process.env.WEBSITE_URL}/projects/${projectId}/delete-repo`,
+      {
+        data: {
+          UserId: UserId,
+          repoId: repoTBD.id,
+        },
+      }
+    );
 
     // Delete the project from the database
     const deletedP = await prisma.project.delete({
