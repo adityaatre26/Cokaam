@@ -72,7 +72,7 @@ export async function POST(request: Request) {
     // Linking the repo to the project and making the repository
     // Also adding webhook to the repo
 
-    await fetch(`http://localhost:3000/api/${res.ProjectId}/link-repo`, {
+    await fetch(`${process.env.WEBSITE_URL}/${res.ProjectId}/link-repo`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

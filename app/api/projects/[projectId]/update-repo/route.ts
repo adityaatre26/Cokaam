@@ -76,7 +76,7 @@ export async function POST(request: Request, { params }) {
 
   // Call delete-repo route
   const deleteResponse = await axios.delete(
-    `http://localhost:3000/api/projects/${projectId}/delete-repo`,
+    `${process.env.WEBSITE_URL}/projects/${projectId}/delete-repo`,
     {
       data: {
         UserId: UserId,
@@ -92,7 +92,7 @@ export async function POST(request: Request, { params }) {
 
   // Create new repo with updated URL
   const updatedRepo = await axios.post(
-    `http://localhost:3000/api/${projectId}/link-repo`,
+    `${process.env.WEBSITE_URL}/${projectId}/link-repo`,
     {
       repoName: repo,
       repoOwner: owner,
