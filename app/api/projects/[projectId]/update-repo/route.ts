@@ -14,10 +14,7 @@ const parseRepoUrl = (repoUrl: string) => {
   return { owner, repo };
 };
 
-export async function POST(
-  request: Request,
-  { params }: { params: { projectId: string } }
-) {
+export async function POST(request: Request, { params }) {
   const { projectId } = await params;
   const { newUrl, UserId } = await request.json();
 

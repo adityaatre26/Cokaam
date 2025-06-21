@@ -2,10 +2,7 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: { projectId: string } }
-) {
+export async function DELETE(request: Request, { params }) {
   const { projectId } = await params;
   const { userId, memberToRemoveId } = await request.json();
 

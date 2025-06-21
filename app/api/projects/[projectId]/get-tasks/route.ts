@@ -4,10 +4,7 @@
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
-export async function GET(
-  request: Request,
-  { params }: { params: { projectId: string } }
-) {
+export async function GET(request: Request, { params }) {
   const { projectId } = await params;
 
   try {

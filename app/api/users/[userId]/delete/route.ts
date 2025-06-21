@@ -3,10 +3,7 @@ import axios from "axios";
 
 const prisma = new PrismaClient();
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: { userId: string } }
-) {
+export async function DELETE(request: Request, { params }) {
   const { userId } = await params;
 
   try {

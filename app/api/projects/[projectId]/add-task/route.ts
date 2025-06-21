@@ -3,10 +3,7 @@ import axios from "axios";
 
 const prisma = new PrismaClient();
 
-export async function POST(
-  request: Request,
-  { params }: { params: { projectId: string } }
-) {
+export async function POST(request: Request, { params }) {
   const { projectId } = await params;
   const { title, description, UserId, priority } = await request.json();
 

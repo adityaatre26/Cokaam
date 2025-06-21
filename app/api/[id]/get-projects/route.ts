@@ -9,12 +9,12 @@ const prisma = new PrismaClient();
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = params;
+  const { id } = await params;
   const data = await getServerSession();
 
-  if (!data?.user) {
+  if (!data?.user || !data.user.name) {
     console.log("User is not authenticated");
     return new Response(
       JSON.stringify({

@@ -39,11 +39,7 @@ import { useProject } from "@/hooks/useProject";
 interface paramInterface {
   projectId: string;
 }
-export default function ProjectDetail({
-  params,
-}: {
-  params: { projectId: string };
-}) {
+export default function ProjectDetail({ params }: { params }) {
   // Unwrap params using React.use()
   const { user, isAuthenticated } = useUser();
   // const { setProjectData } = useProject();

@@ -2,10 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import { Octokit } from "@octokit/rest";
 const prisma = new PrismaClient();
 
-export async function POST(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function POST(request: Request, { params }) {
   try {
     const body = await request.json();
     const { repoName, repoOwner, repoUrl, UserId } = body;
