@@ -14,16 +14,24 @@ interface User {
 interface Project {
   id: string;
   name: string;
-  //   description: string;
+  description: string;
+  repoUrl?: string;
 }
 
+interface Stats {
+  totalProjects: number;
+  totalMembers: number;
+  totalTasks: number;
+}
 // All these things can be accessed by components that consume this context
 interface UserContextType {
   user: User | null;
   projects: Project[];
+  stats: Stats | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   fetchUserData: () => Promise<void>;
+  refreshData: () => Promise<void>;
   addProject: (project: Project) => void;
   deleteProjectContext: (projectId: string) => void;
   logOut: () => void;
@@ -34,6 +42,7 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 export function UserProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [stats, setStats] = useState<Stats | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const { data: session, status } = useSession();
@@ -53,9 +62,12 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         params: { email: session.user?.email },
       });
       const responseData = response.data;
-      if (responseData.success) {
-        console.log("User data fetched successfully");
 
+      const statResponse = await axios.get(
+        `/api/${responseData.data.User.id}/getUserStats`
+      );
+
+      if (responseData.success && statResponse.data.success) {
         setUser({
           id: responseData.data.User.id,
           email: responseData.data.User.email,
@@ -66,10 +78,12 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           responseData.data.Projects.map((project: any) => ({
             id: project.ProjectId,
             name: project.name,
-            // description: project.description,
+            description: project.description,
+            repoUrl: project.repoUrl,
           }))
         );
 
+        setStats(statResponse.data.data);
         setIsAuthenticated(true);
       } else if (
         !responseData.success &&
@@ -91,10 +105,14 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     setProjects((prevProjects) => [...prevProjects, project]);
   };
 
+  const refreshData = async () => {
+    await fetchUserData();
+  };
   const deleteProjectContext = (projectId: string) => {
     setProjects((prevProjects) =>
       prevProjects.filter((project) => project.id !== projectId)
     );
+    refreshData();
   };
 
   const logout = () => {
@@ -111,9 +129,11 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const contextValue: UserContextType = {
     user,
     projects,
+    stats,
     isAuthenticated,
     isLoading: status === "loading",
     fetchUserData,
+    refreshData,
     addProject,
     deleteProjectContext,
     logOut: logout,

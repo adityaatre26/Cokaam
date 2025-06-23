@@ -12,7 +12,7 @@ const authOptions = {
       clientSecret: process.env.GITHUB_CLIENT_SECRET!,
       authorization: {
         params: {
-          scope: "repo user admin:repo_hook", // Needed for webhook creation
+          scope: "repo user admin:repo_hook",
         },
       },
     }),

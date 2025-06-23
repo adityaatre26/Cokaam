@@ -164,7 +164,7 @@ export default function ProjectSettings() {
       userId: user.id,
     });
 
-    deleteProjectContext(projectId);
+    await deleteProjectContext(projectId);
   };
 
   // Loading and error states

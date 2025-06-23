@@ -26,8 +26,8 @@ async function fetchGithubRepo(repoUrl: string, accessToken: string | null) {
 }
 
 export async function POST(request: Request) {
-  const { name, UserId, repoUrl } = await request.json();
-  if (!name || !UserId || !repoUrl) {
+  const { name, UserId, repoUrl, description } = await request.json();
+  if (!name || !UserId || !repoUrl || !description) {
     return new Response("Missing required fields", { status: 400 });
   }
   const user = await prisma.user.findUnique({
@@ -52,6 +52,7 @@ export async function POST(request: Request) {
           data: {
             name,
             ownerId: UserId,
+            description,
           },
         });
 
@@ -84,7 +85,9 @@ export async function POST(request: Request) {
         UserId,
       }),
     });
-    return new Response(JSON.stringify(res), {
+
+    const result = { ...res, repoUrl };
+    return new Response(JSON.stringify(result), {
       status: 201,
     });
   } catch (error) {

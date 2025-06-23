@@ -11,27 +11,26 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Plus, Search, Filter } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useUser } from "@/contexts/UserContext";
 import { useState } from "react";
 import axios from "axios";
+import { AnimatedSpan } from "@/components/AnimatedLink";
+import { Github } from "lucide-react";
+import StatCard from "@/components/StatCard";
+import { useRouter } from "next/navigation";
 
 export default function Dashboard() {
   const [projectName, setProjectName] = useState("");
+  const [description, setDescription] = useState("");
   const [repoUrl, setRepoUrl] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const router = useRouter();
 
-  const stats = [
-    { label: "active projects", value: "12", change: "+3 this month" },
-    { label: "team members", value: "24", change: "+2 this week" },
-    { label: "repositories", value: "18", change: "+1 today" },
-    { label: "tasks completed", value: "156", change: "+12 today" },
-  ];
-
-  const { user, projects, isLoading, addProject } = useUser();
+  const { user, projects, stats, isLoading, addProject, refreshData } =
+    useUser();
 
   const addingProject = async () => {
     setIsCreating(true);
@@ -40,6 +39,7 @@ export default function Dashboard() {
         name: projectName,
         UserId: user.id,
         repoUrl: repoUrl,
+        description: description,
       });
 
       console.log("New project created:", newProject);
@@ -48,10 +48,14 @@ export default function Dashboard() {
         const addData = {
           id: newProject.data.ProjectId,
           name: newProject.data.name,
+          description: newProject.data.description,
+          repoUrl: newProject.data.repoUrl,
         };
         addProject(addData);
         setProjectName("");
         setRepoUrl("");
+        setDescription("");
+        refreshData();
         setDialogOpen(false);
       } else {
         throw new Error("Failed to create project");
@@ -84,27 +88,37 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Navigation */}
-      <nav className="border-b border-gray-900/30 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-8">
+      <nav className="border-b border-b-gray-500 border-dashed backdrop-blur-md sticky top-0 z-50 rounded-b-3xl">
+        <div className="max-w-6xl mx-auto px-4">
           <div className="flex items-center justify-between h-16">
-            <Link href="/" className="flex items-center space-x-3">
-              <div className="w-7 h-7 bg-[#780000] rounded-md"></div>
-              <span className="text-lg font-extralight tracking-wider">
-                flow
-              </span>
-            </Link>
+            {/* Logo */}
+            <motion.div
+              className="flex items-center space-x-3"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6 }}
+            >
+              <div className="w-7 h-7 bg-[#780000] rounded-md" />
+              <Link href="/" className="flex items-center space-x-3">
+                <span className="text-lg font-extralight tracking-wider font-darker text-gray-200">
+                  flow
+                </span>
+              </Link>
+            </motion.div>
 
-            <div className="flex items-center space-x-8">
-              <span className="text-gray-300 font-normal text-sm">
-                welcome back, alex
-              </span>
-              <Button
-                variant="ghost"
-                className="text-gray-300 hover:text-white hover:bg-gray-900/50 font-normal text-sm transition-all duration-300 hover:px-6"
-              >
-                settings
-              </Button>
-            </div>
+            {/* Links + Buttons */}
+            <motion.div
+              className="flex items-center gap-6 font-primary"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+            >
+              <div className="flex items-center gap-4">
+                <span className="text-gray-200 font-primary text-sm">
+                  Welcome Back, {user.username}
+                </span>
+              </div>
+            </motion.div>
           </div>
         </div>
       </nav>
@@ -112,42 +126,38 @@ export default function Dashboard() {
       <div className="max-w-7xl mx-auto px-8 py-12">
         {/* Header */}
         <motion.div
-          className="mb-16"
+          className="mb-8"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <h1 className="text-4xl md:text-5xl font-extralight tracking-tight mb-4">
+          <h1 className="text-4xl md:text-5xl font-darker font-bold">
             Dashboard
           </h1>
-          <p className="text-gray-300 font-normal">
+          <p className="text-gray-300 font-primary">
             overview of your projects and team activity
           </p>
         </motion.div>
 
         {/* Stats Grid */}
         <motion.div
-          className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-16"
+          className="grid grid-cols-2 lg:grid-cols-3 gap-2 mb-16"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
         >
-          {stats.map((stat) => (
-            <Card
-              key={stat.label}
-              className="bg-gray-950/50 border-gray-800/30 p-6 hover:bg-gray-900/30 transition-all duration-300 min-h-[120px] flex flex-col justify-between"
-            >
-              <div className="text-2xl font-extralight mb-2 text-white">
-                {stat.value}
-              </div>
-              <div className="text-gray-300 font-normal text-sm mb-1 capitalize">
-                {stat.label}
-              </div>
-              <div className="text-gray-500 font-normal text-xs">
-                {stat.change}
-              </div>
-            </Card>
-          ))}
+          <StatCard
+            statValue={stats!.totalProjects}
+            statLabel={"active projects"}
+          />
+          <StatCard
+            statValue={stats!.totalMembers}
+            statLabel={"team members"}
+          />
+          <StatCard
+            statValue={stats!.totalTasks}
+            statLabel={"tasks completed"}
+          />
         </motion.div>
 
         {/* Projects Section */}
@@ -158,25 +168,29 @@ export default function Dashboard() {
         >
           <div className="flex flex-col md:flex-row md:items-center justify-between mb-12">
             <div>
-              <h2 className="text-3xl font-extralight mb-4">Projects</h2>
-              <p className="text-gray-300 font-normal">
+              <h2 className="text-5xl font-darker font-bold mb-0.5">
+                Projects
+              </h2>
+              <p className="text-gray-300 font-primary text-sm">
                 manage and track all your projects
               </p>
             </div>
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-[#00607a] hover:bg-[#007a9a] text-white font-normal transition-all duration-300 hover:px-6 mt-6 md:mt-0">
-                  <Plus className="h-4 w-4 mr-2" />
-                  new project
+                <Button
+                  variant="ghost"
+                  className="bg-[#11b74e]  hover:text-white font-primary hover:bg-[#11b74e] font-normal text-sm px-4 transition-all duration-300 cursor-pointer border-dashed border-1 border-[#FBEFEF]"
+                >
+                  <AnimatedSpan title="Create Project" />
                 </Button>
               </DialogTrigger>
-              <DialogContent className="bg-gray-900/90 backdrop-blur-md p-6 rounded-lg border border-gray-800">
+              <DialogContent className="bg-[#0c0c0c] backdrop-blur-md p-6 rounded-lg border border-gray-600">
                 <DialogHeader>
                   <DialogTitle className="text-2xl font-extralight text-white">
                     Create New Project
                   </DialogTitle>
                 </DialogHeader>
-                <div className="mb-4">
+                <div className="mb-2">
                   <Label
                     htmlFor="project-name"
                     className="text-sm font-normal text-gray-300"
@@ -185,13 +199,14 @@ export default function Dashboard() {
                   </Label>
                   <Input
                     id="project-name"
+                    required
                     value={projectName}
                     onChange={(e) => setProjectName(e.target.value)}
-                    placeholder="Enter project name"
-                    className="mt-1 bg-gray-950/50 border-gray-800/30 text-gray-200 placeholder-gray-500 font-normal focus:border-gray-700"
+                    placeholder="Sample Project"
+                    className="mt-2 bg-[#161616] border-gray-800/30 text-gray-200 placeholder-gray-500 placeholder:italic font-primary focus:border-gray-700"
                   />
                 </div>
-                <div className="mb-6">
+                <div className="mb-2">
                   <Label
                     htmlFor="repo-url"
                     className="text-sm font-normal text-gray-300"
@@ -201,68 +216,98 @@ export default function Dashboard() {
                   <Input
                     id="repo-url"
                     value={repoUrl}
+                    required
                     onChange={(e) => setRepoUrl(e.target.value)}
-                    placeholder="Enter repository URL"
-                    className="mt-1 bg-gray-950/50 border-gray-800/30 text-gray-200 placeholder-gray-500 font-normal focus:border-gray-700"
+                    placeholder="https://github.com/username/repo-name"
+                    className="mt-2 bg-[#161616] border-gray-800/30 text-gray-200 placeholder-gray-500 placeholder:italic font-primary focus:border-gray-700"
+                  />
+                </div>
+                <div className="mb-2">
+                  <Label
+                    htmlFor="description"
+                    className="text-sm font-normal text-gray-300"
+                  >
+                    Description
+                  </Label>
+                  <Input
+                    id="description"
+                    required
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Website for a sample project"
+                    className="mt-2 bg-[#161616] border-gray-800/30 text-gray-200 placeholder-gray-500 placeholder:italic font-primary focus:border-gray-700"
                   />
                 </div>
                 <div className="flex justify-end gap-4">
                   <Button
-                    variant="outline"
-                    className="border-gray-800 text-gray-300 hover:bg-gray-900/50 hover:text-white hover:border-gray-700 font-normal transition-all duration-300"
+                    variant="ghost"
+                    className="bg-[#e93933] text-gray-200 hover:text-white font-primary hover:bg-[#e93933] font-primary font-medium text-sm px-4 transition-all duration-300 cursor-pointer border-dashed border-1 border-gray-500"
                     onClick={() => setDialogOpen(false)}
+                    disabled={isCreating}
                   >
-                    Cancel
+                    <AnimatedSpan title="Cancel" />
                   </Button>
                   <Button
-                    className="bg-[#00607a] hover:bg-[#007a9a] text-white font-normal transition-all duration-300"
+                    variant="ghost"
+                    className="bg-[#11b74e] text-gray-200 hover:text-white font-primary hover:bg-[#11b74e] font-primary font-medium text-sm px-4 transition-all duration-300 cursor-pointer border-dashed border-1 border-gray-500"
                     onClick={addingProject}
                     disabled={isCreating}
                   >
-                    {isCreating ? "Creating..." : "Create Project"}
+                    {isCreating ? (
+                      "creating project"
+                    ) : (
+                      <AnimatedSpan title="Create Project" />
+                    )}
                   </Button>
                 </div>
               </DialogContent>
             </Dialog>
           </div>
 
-          {/* Search and Filter */}
-          <div className="flex flex-col md:flex-row gap-4 mb-12">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
-              <Input
-                placeholder="search projects..."
-                className="pl-10 bg-gray-950/50 border-gray-800/30 text-gray-200 placeholder-gray-500 font-normal focus:border-gray-700"
-              />
-            </div>
-            <Button
-              variant="outline"
-              className="border-gray-800 text-gray-300 hover:bg-gray-900/50 hover:text-white hover:border-gray-700 font-normal transition-all duration-300 hover:px-6"
-            >
-              <Filter className="h-4 w-4 mr-2" />
-              filter
-            </Button>
-          </div>
-
           {/* Projects Grid */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {projects.map((project, index) => (
-              <motion.div
-                key={project.id}
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.6 + index * 0.1 }}
-              >
-                <Link href={`/projects/${project.id}`}>
-                  <Card className="bg-gray-950/50 border-gray-800/30 p-6 hover:bg-gray-900/30 transition-all duration-300 group cursor-pointer h-full">
-                    <h3 className="text-lg font-normal group-hover:text-white transition-colors text-gray-200 capitalize">
-                      {project.name}
-                    </h3>
-                  </Card>
-                </Link>
-              </motion.div>
-            ))}
-          </div>
+          {stats?.totalProjects === 0 ? (
+            <div className="flex flex-col items-center justify-center py-24 mb-8 bg-[#0c0c0c] border-2 border-dashed border-gray-600 rounded-lg shadow-inner">
+              <div className="flex items-center justify-center w-16 h-16 rounded-full bg-[#161616] mb-4">
+                <Github className="w-8 h-8 text-[#11b74e]" />
+              </div>
+              <h3 className="text-2xl font-darker font-bold text-gray-200 mb-2">
+                No Projects Yet
+              </h3>
+              <p className="text-gray-400 font-primary text-base mb-4 text-center max-w-md">
+                Start by creating your first project. Your projects will appear
+                here and help you organize your workflow.
+              </p>
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-2">
+              {projects.map((project, index) => (
+                <motion.div
+                  key={project.id}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: 0.6 + index * 0.1 }}
+                >
+                  <Link href={`/projects/${project.id}`}>
+                    <Card className="bg-[#0c0c0c] border-gray-500 border-dashed p-6  cursor-pointer h-full rounded-sm overflow-hidden group relative">
+                      <h3 className="text-3xl font-darker font-medium group-hover:text-white transition-colors text-gray-200 capitalize">
+                        {project.name}
+                      </h3>
+                      {project.description && (
+                        <p className="text-gray-400 text-sm mt-1 font-primary group-hover:opacity-0 transition-all duration-300 ease-out">
+                          {project.description}
+                        </p>
+                      )}
+                      <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-11/12 h-1/2 bg-[08090a] border-1 border-gray-500 border-dashed rounded-t-lg opacity-0 blur-lg translate-y-full transition-all duration-300 ease-out group-hover:translate-y-0 group-hover:opacity-100 group-hover:blur-none pt-4 px-3">
+                        <div className="text-sm font-primary text-gray-400 space-y-1">
+                          <div>{project.repoUrl}</div>
+                        </div>
+                      </div>
+                    </Card>
+                  </Link>
+                </motion.div>
+              ))}
+            </div>
+          )}
         </motion.div>
       </div>
     </div>

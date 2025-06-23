@@ -43,6 +43,8 @@ export async function GET(request: Request) {
           select: {
             ProjectId: true,
             name: true,
+            description: true,
+            githubRepo: true,
           },
         },
       },
@@ -51,6 +53,8 @@ export async function GET(request: Request) {
     const formattedProjects = allProjects.map((sing) => ({
       ProjectId: sing.project.ProjectId,
       name: sing.project.name,
+      description: sing.project.description || "No description available",
+      repoUrl: sing.project.githubRepo?.repoUrl,
     }));
 
     // Formatting the response in the requested structure
