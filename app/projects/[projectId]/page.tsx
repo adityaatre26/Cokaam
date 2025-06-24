@@ -34,6 +34,7 @@ import {
 } from "@/types/projectTypes";
 import { useUser } from "@/contexts/UserContext";
 import { useProject } from "@/hooks/useProject";
+import LoadingScreen from "@/components/LoadingPage";
 // import { useProject } from "@/contexts/ProjectContext";
 
 interface paramInterface {
@@ -57,7 +58,7 @@ export default function ProjectDetail({ params }: { params }) {
   const [members, setMembers] = useState<MembershipInterface[]>([]);
   const [tasks, setTasks] = useState<TaskInterface[]>([]);
   const [commit, setCommits] = useState<CommitInterface[]>([]);
-  const { data } = useProject(unwrappedParams.projectId);
+  const { data, isLoading } = useProject(unwrappedParams.projectId);
 
   useEffect(() => {
     if (data) {
@@ -299,6 +300,10 @@ export default function ProjectDetail({ params }: { params }) {
       console.log("Error completing task:", error);
     }
   };
+
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
 
   return (
     <div className="min-h-screen bg-black text-white">

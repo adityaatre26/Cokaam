@@ -15,7 +15,7 @@ async function fetchGithubRepo(repoUrl: string, accessToken: string | null) {
     },
   });
   if (!r.ok) {
-    throw new Error("Failed to fetch GitHub repo");
+    throw new Error("Failed fetch");
   }
   const repoData = await r.json();
 
@@ -91,6 +91,9 @@ export async function POST(request: Request) {
       status: 201,
     });
   } catch (error) {
+    if (error === "Failed fetch") {
+      return new Response("Failed to fetch GitHub repository", { status: 404 });
+    }
     console.error("Error creating project:", error);
     return new Response("Error creating project", { status: 500 });
   }

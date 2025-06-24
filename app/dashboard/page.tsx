@@ -19,7 +19,14 @@ import axios from "axios";
 import { AnimatedSpan } from "@/components/AnimatedLink";
 import { Github } from "lucide-react";
 import StatCard from "@/components/StatCard";
-import { useRouter } from "next/navigation";
+import ErrorToast from "@/components/ErrorToast";
+import { useErrorHandler } from "@/hooks/useErrorHandler";
+import {
+  sanitizeInput,
+  validateGithubUrl,
+  validateLength,
+  validateRequired,
+} from "@/utils/validation";
 
 export default function Dashboard() {
   const [projectName, setProjectName] = useState("");
@@ -27,20 +34,77 @@ export default function Dashboard() {
   const [repoUrl, setRepoUrl] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const router = useRouter();
 
   const { user, projects, stats, isLoading, addProject, refreshData } =
     useUser();
 
+  const { error, handleApiError, hideError, showError } = useErrorHandler();
+
+  const validateForm = () => {
+    // Validate project name
+    const nameError = validateRequired(projectName, "Project name");
+    if (nameError) {
+      showError(nameError, "validation");
+      return false;
+    }
+
+    const nameLengthError = validateLength(projectName, 3, 50, "Project name");
+    if (nameLengthError) {
+      showError(nameLengthError, "validation");
+      return false;
+    }
+
+    // Validate repository URL
+    const repoError = validateGithubUrl(repoUrl);
+    if (repoError) {
+      showError(repoError, "validation");
+      return false;
+    }
+
+    // Additional GitHub URL validation
+    const githubUrlPattern =
+      /^https:\/\/github\.com\/[a-zA-Z0-9._-]+\/[a-zA-Z0-9._-]+\/?$/;
+    if (!githubUrlPattern.test(repoUrl)) {
+      showError(
+        "GitHub URL must be in format: https://github.com/username/reponame",
+        "validation"
+      );
+      return false;
+    }
+
+    // Validate description
+    const descError = validateRequired(description, "Description");
+    if (descError) {
+      showError(descError, "validation");
+      return false;
+    }
+
+    const descLengthError = validateLength(description, 10, 200, "Description");
+    if (descLengthError) {
+      showError(descLengthError, "validation");
+      return false;
+    }
+
+    return true;
+  };
+
   const addingProject = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
     setIsCreating(true);
     try {
-      const newProject = await axios.post(`/api/${user?.id}/create-project`, {
-        name: projectName,
+      const sanitizedData = {
+        name: sanitizeInput(projectName),
         UserId: user.id,
-        repoUrl: repoUrl,
-        description: description,
-      });
+        repoUrl: sanitizeInput(repoUrl),
+        description: sanitizeInput(description),
+      };
+      const newProject = await axios.post(
+        `/api/${user?.id}/create-project`,
+        sanitizedData
+      );
 
       console.log("New project created:", newProject);
 
@@ -58,12 +122,27 @@ export default function Dashboard() {
         refreshData();
         setDialogOpen(false);
       } else {
-        throw new Error("Failed to create project");
+        showError("Failed to create project. Please try again.", "server");
       }
     } catch (error) {
       console.error("Error creating project:", error);
+      handleApiError(error);
     } finally {
       setIsCreating(false);
+    }
+  };
+
+  const resetForm = () => {
+    setProjectName("");
+    setRepoUrl("");
+    setDescription("");
+    hideError(); // Clear any existing errors when dialog closes
+  };
+
+  const handleDialogClose = (open: boolean) => {
+    setDialogOpen(open);
+    if (!open) {
+      resetForm();
     }
   };
 
@@ -242,7 +321,7 @@ export default function Dashboard() {
                   <Button
                     variant="ghost"
                     className="bg-[#e93933] text-gray-200 hover:text-white font-primary hover:bg-[#e93933] font-primary font-medium text-sm px-4 transition-all duration-300 cursor-pointer border-dashed border-1 border-gray-500"
-                    onClick={() => setDialogOpen(false)}
+                    onClick={() => handleDialogClose(false)}
                     disabled={isCreating}
                   >
                     <AnimatedSpan title="Cancel" />
@@ -310,6 +389,13 @@ export default function Dashboard() {
           )}
         </motion.div>
       </div>
+
+      <ErrorToast
+        message={error.message}
+        type={error.type}
+        isVisible={error.isVisible}
+        onClose={hideError}
+      />
     </div>
   );
 }

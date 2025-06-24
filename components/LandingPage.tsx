@@ -10,6 +10,7 @@ import { useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { AnimatedLink } from "@/components/AnimatedLink";
+import LoadingScreen from "./LoadingPage";
 
 export default function LandingPage() {
   // const { data: session, status } = useSession();
@@ -30,7 +31,7 @@ export default function LandingPage() {
   };
 
   if (isLoading) {
-    return <div>The dashboard is loading</div>;
+    return <LoadingScreen />;
   }
   return (
     <div className="min-h-screen bg-black text-white">
@@ -67,7 +68,7 @@ export default function LandingPage() {
                   {[0, 0.2, 0.4].map((delay, i) => (
                     <motion.div
                       key={i}
-                      className="w-2 h-2 bg-[#012e3a] rounded-full"
+                      className="w-2 h-2 bg-[#780000] rounded-full" // Changed color to match theme
                       animate={{ scale: [1, 1.2, 1], opacity: [1, 0.6, 1] }}
                       transition={{
                         duration: 1,
@@ -78,17 +79,7 @@ export default function LandingPage() {
                     />
                   ))}
                 </div>
-              ) : !isAuthenticated ? (
-                <div className="flex items-center gap-4">
-                  <Button
-                    variant="ghost"
-                    className="bg-[#08090a] text-gray-200 hover:text-white hover:bg-[#1a1b1e] font-normal text-sm px-4 transition-all duration-300 cursor-pointer border-dashed border-1 border-gray-500"
-                    onClick={() => signIn("github", { redirect: false })}
-                  >
-                    <AnimatedLink href="" title="sign in" />
-                  </Button>
-                </div>
-              ) : (
+              ) : isAuthenticated ? (
                 <div className="flex items-center gap-3">
                   <AnimatedLink href="/dashboard" title="dashboard" />
                   <Button
@@ -97,6 +88,16 @@ export default function LandingPage() {
                     className="bg-[#08090a] text-gray-200 hover:text-white hover:bg-[#1a1b1e] font-normal text-sm px-4 transition-all duration-300 cursor-pointer border-dashed border-1 border-gray-500 "
                   >
                     <AnimatedLink href="" title="sign out" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-4">
+                  <Button
+                    variant="ghost"
+                    className="bg-[#08090a] text-gray-200 hover:text-white hover:bg-[#1a1b1e] font-normal text-sm px-4 transition-all duration-300 cursor-pointer border-dashed border-1 border-gray-500"
+                    onClick={() => signIn("github", { redirect: false })}
+                  >
+                    <AnimatedLink href="" title="sign in" />
                   </Button>
                 </div>
               )}

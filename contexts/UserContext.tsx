@@ -45,6 +45,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [stats, setStats] = useState<Stats | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [userDataLoaded, setUserDataLoaded] = useState(false);
   const { data: session, status } = useSession();
 
   const fetchUserData = async () => {
@@ -98,6 +99,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       setIsAuthenticated(false);
     } finally {
       setIsLoading(false);
+      setUserDataLoaded(true);
     }
   };
 
@@ -120,18 +122,31 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     setProjects([]);
     setIsAuthenticated(false);
+    setUserDataLoaded(true);
   };
 
   useEffect(() => {
-    fetchUserData();
-  }, [session]);
+    if (status === "loading") {
+      setIsLoading(true);
+      setUserDataLoaded(false);
+    } else if (status === "authenticated") {
+      fetchUserData();
+    } else if (status === "unauthenticated") {
+      setIsLoading(false);
+      setUserDataLoaded(true);
+      setIsAuthenticated(false);
+    }
+  }, [session, status]);
+
+  const overallLoading =
+    status === "loading" || (status === "authenticated" && !userDataLoaded);
 
   const contextValue: UserContextType = {
     user,
     projects,
     stats,
     isAuthenticated,
-    isLoading: status === "loading",
+    isLoading: overallLoading,
     fetchUserData,
     refreshData,
     addProject,
