@@ -8,13 +8,13 @@ export const AnimatedLink = ({
   href,
 }: {
   title: string;
-  href: string;
+  href?: string;
 }) => {
   const [isHovered, setIsHovered] = useState(false);
 
   return (
     <Link
-      href={href}
+      href={href || "#"}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       className="relative overflow-hidden text-gray-300 hover:text-white transition-colors duration-300 font-normal text-sm"
