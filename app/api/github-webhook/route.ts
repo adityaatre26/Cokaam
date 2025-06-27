@@ -76,6 +76,21 @@ export async function POST(req: Request) {
           assigneeId: user.UserId, // Assign the task to the user
         },
       });
+
+      try {
+        await axios.post(
+          `${process.env.NEXT_PUBLIC_WEBSOCKET_URL}/emit-completeTask`,
+          {
+            projectId: matching.projectId,
+            taskId: matching.TaskId,
+            UserId: user.UserId,
+            assignee: user.username,
+          }
+        );
+        console.log("Task sent to socket server successfully");
+      } catch (error) {
+        console.error("Error sending task to socket server:", error);
+      }
     }
 
     console.log("Adding to the database");
@@ -100,21 +115,6 @@ export async function POST(req: Request) {
       console.log("Commit sent to socket server successfully");
     } catch (err) {
       console.error("Error sending commit to socket server:", err);
-    }
-
-    if (matching) {
-      try {
-        await axios.post(
-          `${process.env.NEXT_PUBLIC_WEBSOCKET_URL}/emit-completeTask`,
-          {
-            projectId: matching.projectId,
-            taskId: matching.TaskId,
-          }
-        );
-        console.log("Task sent to socket server successfully");
-      } catch (error) {
-        console.error("Error sending task to socket server:", error);
-      }
     }
 
     return new Response("Webhook processed", { status: 200 });
