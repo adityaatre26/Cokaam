@@ -19,6 +19,10 @@ import {
   Code,
   // GitPullRequest,
   ChevronDown,
+  Github,
+  GitCommit,
+  Check,
+  ClipboardCheck,
 } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -60,12 +64,18 @@ export default function ProjectDetail({ params }: { params }) {
   const [commit, setCommits] = useState<CommitInterface[]>([]);
   const { data, isLoading } = useProject(unwrappedParams.projectId);
 
+  const sortedTasks = (tasksTosSort: TaskInterface[]) => {
+    return [...tasksTosSort].sort((a, b) => {
+      return (a.status === "DONE" ? 1 : 0) - (b.status === "DONE" ? 1 : 0);
+    });
+  };
+
   useEffect(() => {
     if (data) {
       console.log("Data from react query", data);
       setProject(data.projectInfo);
       setMembers(data.members);
-      setTasks(data.activeTasks);
+      setTasks(sortedTasks(data.activeTasks));
       setCommits(data.recentCommits);
     }
   }, [data]);
@@ -152,9 +162,23 @@ export default function ProjectDetail({ params }: { params }) {
 
     socket.on("task_completed", (data) => {
       console.log("Task completed event received: ", data);
-      setTasks((prevTasks) =>
-        prevTasks.filter((task) => task.TaskId !== data.taskId)
-      );
+      setTasks((prevTasks) => {
+        // Step 1: Create a new array with the task's status updated to "DONE".
+        const updatedTasks = prevTasks.map((task) =>
+          task.TaskId === data.taskId
+            ? {
+                ...task,
+                status: "DONE",
+                assignee: {
+                  UserId: data.UserId,
+                  username: data.assignee,
+                },
+              }
+            : task
+        );
+        // Step 2: Sort the newly updated array and return it to update the state.
+        return sortedTasks(updatedTasks);
+      });
     });
 
     return () => {
@@ -431,116 +455,127 @@ export default function ProjectDetail({ params }: { params }) {
               </Button>
             </div>
 
-            <div className="bg-[#111111] border border-gray-500 border-dashed rounded-lg overflow-hidden h-[600px] flex flex-col relative">
-              <div className="p-4 border-b border-gray-800/30 flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Code className="h-4 w-4 text-gray-400" />
-                  <span className="text-gray-300 font-primary text-sm">
-                    {project?.repoUrl?.slice(8)}
-                  </span>
+            {commit.length === 0 ? (
+              <div className="flex flex-col items-center h-[90%] justify-center py-24 mb-8 bg-[#0c0c0c] border border-dashed border-gray-600 rounded-lg shadow-inner">
+                <div className="flex items-center justify-center w-16 h-16 rounded-full bg-[#161616] mb-4">
+                  <GitCommit className="w-8 h-8 text-[#11b74e]" />
                 </div>
-                <Badge className="bg-[#00607a]/20 text-[#00607a] hover:bg-[#00607a]/30">
-                  main
-                </Badge>
+                <h3 className="text-2xl font-darker font-bold text-gray-200 mb-2">
+                  No Commits Yet
+                </h3>
+                <p className="text-gray-400 font-primary text-base mb-4 text-center max-w-md">
+                  Start by commiting to your repository. Your commits will
+                  appear here.
+                </p>
               </div>
+            ) : (
+              <div className="bg-[#111111] border border-gray-500 border-dashed rounded-lg overflow-hidden h-[600px] flex flex-col relative">
+                <div className="p-4 border-b border-gray-800/30 flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Code className="h-4 w-4 text-gray-400" />
+                    <span className="text-gray-300 font-primary text-sm">
+                      {project?.repoUrl?.slice(8)}
+                    </span>
+                  </div>
+                  <Badge className="bg-[#00607a]/20 text-[#00607a] hover:bg-[#00607a]/30">
+                    main
+                  </Badge>
+                </div>
 
-              {/* Repository Activity List with Hidden Scrollbar */}
-              <div
-                ref={repoContainerRef}
-                className="flex-1 overflow-y-auto scrollbar-hide divide-y space-y-2 pb-2"
-                style={{
-                  scrollbarWidth: "none", // Firefox
-                  msOverflowStyle: "none", // IE/Edge
-                }}
-              >
-                {commit.map((activity, index) => (
-                  <motion.div
-                    key={activity.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: index * 0.05 }}
-                    whileHover={{
-                      backgroundColor: "#1a1a1a",
-                      borderColor: "#444",
-                      boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.5)",
-                    }}
-                    className="py-4 px-4 rounded-lg bg-[#202020] hover:bg-[#1a1a1a] transition-all border border-gray-700 hover:border-gray-500 relative pl-10 mx-2 group"
-                  >
-                    {/* Timeline dot */}
-                    <div className="absolute left-4 top-5 w-3 h-3 bg-[#9a0000] rounded-full border-2 border-[#202020] z-10"></div>
-
-                    {/* Timeline pulse animation */}
+                {/* Repository Activity List with Hidden Scrollbar */}
+                <div
+                  ref={repoContainerRef}
+                  className="flex-1 overflow-y-auto scrollbar-hide divide-y space-y-2 pb-2"
+                  style={{
+                    scrollbarWidth: "none", // Firefox
+                    msOverflowStyle: "none", // IE/Edge
+                  }}
+                >
+                  {commit.map((activity, index) => (
                     <motion.div
-                      className="absolute left-4 top-5 w-3 h-3 bg-[#9a0000] rounded-full"
-                      animate={{
-                        scale: [1, 1.8, 1],
-                        opacity: [0.3, 0, 0],
+                      key={activity.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: index * 0.05 }}
+                      whileHover={{
+                        backgroundColor: "#1a1a1a",
+                        borderColor: "#444",
+                        boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.5)",
                       }}
-                      transition={{
-                        duration: 2,
-                        repeat: Infinity,
-                        ease: "easeOut",
-                      }}
-                    />
+                      className="py-4 px-4 rounded-lg bg-[#202020] hover:bg-[#1a1a1a] transition-all border border-gray-700 hover:border-gray-500 relative pl-10 mx-2 group"
+                    >
+                      {/* Timeline dot */}
+                      <div className="absolute left-4 top-5 w-3 h-3 bg-[#9a0000] rounded-full border-2 border-[#202020] z-10"></div>
 
-                    {/* Timeline connector (except for last item) */}
-                    {/* {index !== commit.length - 1 && (
-                      <div className="absolute left-5 top-8 bottom-0 w-0.5 bg-gray-700"></div>
-                    )} */}
+                      {/* Timeline pulse animation */}
+                      <motion.div
+                        className="absolute left-4 top-5 w-3 h-3 bg-[#9a0000] rounded-full"
+                        animate={{
+                          scale: [1, 1.8, 1],
+                          opacity: [0.3, 0, 0],
+                        }}
+                        transition={{
+                          duration: 2,
+                          repeat: Infinity,
+                          ease: "easeOut",
+                        }}
+                      />
 
-                    <div>
-                      <p className="text-gray-200 text-sm font-primary mb-1 group-hover:text-white transition-colors">
-                        {activity.message}
-                      </p>
-                      <div className="flex flex-wrap items-center gap-x-3 text-xs text-gray-400 mt-2">
-                        <div className="flex items-center gap-1">
-                          <User className="h-3 w-3 text-gray-500" />
-                          <span className="capitalize font-primary">
-                            {activity.author}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <GitBranch className="h-3 w-3 text-gray-500" />
-                          <span className="text-gray-500 font-primary">
-                            {activity.branch}
-                          </span>
-                        </div>
-                        {/* Add timestamp here */}
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-3 w-3 text-gray-500" />
-                          <span className="text-gray-500 font-primary">
-                            {formatTimeAgo(activity.timestamp)}
-                          </span>
+                      <div>
+                        <p className="text-gray-200 text-sm font-primary mb-1 group-hover:text-white transition-colors">
+                          {activity.message}
+                        </p>
+                        <div className="flex flex-wrap items-center gap-x-3 text-xs text-gray-400 mt-2">
+                          <div className="flex items-center gap-1">
+                            <User className="h-3 w-3 text-gray-500" />
+                            <span className="capitalize font-primary">
+                              {activity.author}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <GitBranch className="h-3 w-3 text-gray-500" />
+                            <span className="text-gray-500 font-primary">
+                              {activity.branch}
+                            </span>
+                          </div>
+                          {/* Add timestamp here */}
+                          <div className="flex items-center gap-1">
+                            <Clock className="h-3 w-3 text-gray-500" />
+                            <span className="text-gray-500 font-primary">
+                              {formatTimeAgo(activity.timestamp)}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
+                    </motion.div>
+                  ))}
+                </div>
 
-              {/* Scroll Indicator for Repository */}
-              {repoCanScroll && repoScrollPosition === 0 && (
-                <motion.div
-                  className="absolute bottom-4 right-4 w-8 h-8 bg-gray-800/80 rounded-full flex items-center justify-center backdrop-blur-sm border border-gray-700/50"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 1 }}
-                >
+                {/* Scroll Indicator for Repository */}
+                {repoCanScroll && repoScrollPosition === 0 && (
                   <motion.div
-                    animate={{ y: [0, 2, 0] }}
-                    transition={{
-                      duration: 1.5,
-                      repeat: Number.POSITIVE_INFINITY,
-                      ease: "easeInOut",
-                    }}
+                    className="absolute bottom-4 right-4 w-8 h-8 bg-gray-800/80 rounded-full flex items-center justify-center backdrop-blur-sm border border-gray-700/50"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 1 }}
                   >
-                    <ChevronDown className="h-4 w-4 text-gray-400" />
+                    <motion.div
+                      animate={{ y: [0, 2, 0] }}
+                      transition={{
+                        duration: 1.5,
+                        repeat: Number.POSITIVE_INFINITY,
+                        ease: "easeInOut",
+                      }}
+                    >
+                      <ChevronDown className="h-4 w-4 text-gray-400" />
+                    </motion.div>
                   </motion.div>
-                </motion.div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
           </motion.div>
 
+          {/* Right Column - Tasks (2/5 width) */}
           {/* Right Column - Tasks (2/5 width) */}
           <motion.div
             className="lg:col-span-2"
@@ -549,93 +584,82 @@ export default function ProjectDetail({ params }: { params }) {
             transition={{ duration: 0.6, delay: 0.3 }}
           >
             <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-2xl font-extralight flex items-center">
-                <CheckCircle className="h-5 w-5 mr-2" />
-                Tasks
+              <h2 className="text-3xl font-darker flex items-center">
+                <CheckCircle className="h-5 w-5 mr-2 mt-2" />
+                To-Do
               </h2>
-              <span className="text-sm text-gray-300 font-normal">
-                {tasks?.filter((t) => t.status === "DONE")?.length || 0}/
-                {tasks?.length || 0} completed
+              <span className="text-sm text-gray-400 font-primary mt-2">
+                {tasks?.length || 0} open tasks
               </span>
             </div>
 
-            <div className="bg-gray-950/50 border border-gray-800/30 rounded-lg overflow-hidden h-[600px] flex flex-col relative">
-              {/* Add Task */}
-              <div className="p-4 border-b border-gray-800/30 space-y-4">
+            <div className="bg-[#111111] border border-gray-500 mt-7 border-dashed rounded-lg overflow-hidden h-[600px] flex flex-col relative">
+              {/* Add Task Form Area */}
+              <div className="p-4 border-b border-gray-700/60 bg-gradient-to-b from-[#1c1c1c]/50 to-transparent space-y-4">
                 <div className="flex space-x-2">
                   <Input
-                    placeholder="add new task..."
+                    placeholder="Add new task"
                     value={newTask}
                     onChange={(e) => setNewTask(e.target.value)}
                     onKeyPress={(e) => e.key === "Enter" && addTask()}
-                    className="bg-gray-900/50 border-gray-800/30 text-gray-200 placeholder-gray-500 font-normal"
+                    className="bg-[#0a0a0a] border-gray-700/60 placeholder:italic text-gray-200 placeholder-gray-500 font-primary focus-visible:ring-offset-0 focus-visible:ring-2 focus-visible:ring-[#00607a]/70 focus-visible:border-[#00607a]"
                   />
                   <Button
                     onClick={addTask}
-                    className="bg-[#00607a] hover:bg-[#007a9a] text-white font-normal transition-all duration-300 hover:px-6"
+                    size="icon"
+                    className="bg-[#0a0a0a] hover:bg-[#e0e0e0] group border-1 border-gray-700/60 rounded-full text-white font-normal transition-all duration-300 flex-shrink-0"
                   >
-                    <Plus className="h-4 w-4" />
+                    <Plus className="h-4 w-4 group-hover:text-black group-hover:rotate-90 transition-all duration-300 ease-out" />
                   </Button>
                 </div>
 
-                {/* Task Description */}
-                <div>
-                  <Label className="text-sm text-gray-400 font-normal mb-2 block">
-                    Description
-                  </Label>
+                <div className="space-y-3">
                   <Input
-                    placeholder="task description..."
+                    placeholder="Add a description"
                     value={taskDescription}
                     onChange={(e) => setTaskDescription(e.target.value)}
-                    className="bg-gray-900/50 border-gray-800/30 text-gray-200 placeholder-gray-500 font-normal"
+                    className="bg-[#0a0a0a] border-gray-700/60 text-gray-300 placeholder-gray-500 placeholder:italic text-sm font-primary focus-visible:ring-offset-0 focus-visible:ring-2 focus-visible:ring-[#00607a]/70 focus-visible:border-[#00607a]"
                   />
-                </div>
-
-                {/* Priority Selection */}
-                <div>
-                  <Label className="text-sm text-gray-400 font-normal mb-2 block">
-                    Priority
-                  </Label>
                   <RadioGroup
                     value={taskPriority}
                     onValueChange={setTaskPriority}
-                    className="flex space-x-6"
+                    className="flex space-x-6 pt-1"
                   >
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-2 group">
                       <RadioGroupItem
                         value="HIGH"
                         id="high"
-                        className="border-[#9a0000] text-[#9a0000]"
+                        className="h-4 w-4 border-gray-600 cursor-pointer data-[state=checked]:border-red-500 data-[state=checked]:text-red-500 text-red-500 focus:ring-red-500 focus-visible:ring-offset-0 group-hover:ring-2 group-hover:ring-red-500 group-hover:shadow-[0_0_8px_2px_rgba(220,38,38,0.6)] transition-all duration-150"
                       />
                       <Label
                         htmlFor="high"
-                        className="text-sm text-gray-300 font-normal cursor-pointer"
+                        className="text-sm text-gray-300 font-primary cursor-pointer"
                       >
                         High
                       </Label>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-2 group">
                       <RadioGroupItem
                         value="MEDIUM"
                         id="medium"
-                        className="border-yellow-500 text-yellow-500"
+                        className="h-4 w-4 border-gray-600 cursor-pointer data-[state=checked]:border-yellow-500 data-[state=checked]:text-yellow-500 text-yellow-500 focus:ring-yellow-500 focus-visible:ring-offset-0 group-hover:ring-2 group-hover:ring-yellow-400 group-hover:shadow-[0_0_8px_2px_rgba(250,204,21,0.6)] transition-all duration-150"
                       />
                       <Label
                         htmlFor="medium"
-                        className="text-sm text-gray-300 font-normal cursor-pointer"
+                        className="text-sm text-gray-300 font-primary cursor-pointer"
                       >
                         Medium
                       </Label>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-2 group">
                       <RadioGroupItem
                         value="LOW"
                         id="low"
-                        className="border-gray-500 text-gray-500"
+                        className="h-4 w-4 border-gray-600 cursor-pointer data-[state=checked]:border-gray-400 data-[state=checked]:text-gray-400 text-gray-400 focus:ring-gray-400 focus-visible:ring-offset-0 group-hover:ring-2 group-hover:ring-gray-400 group-hover:shadow-[0_0_8px_2px_rgba(156,163,175,0.6)] transition-all duration-150"
                       />
                       <Label
                         htmlFor="low"
-                        className="text-sm text-gray-300 font-normal cursor-pointer"
+                        className="text-sm text-gray-300 font-primary cursor-pointer"
                       >
                         Low
                       </Label>
@@ -644,100 +668,168 @@ export default function ProjectDetail({ params }: { params }) {
                 </div>
               </div>
 
-              {/* Tasks List with Hidden Scrollbar */}
+              {/* Tasks List Area */}
               <div
                 ref={taskContainerRef}
-                className="flex-1 overflow-y-auto scrollbar-hide"
-                style={{
-                  scrollbarWidth: "none", // Firefox
-                  msOverflowStyle: "none", // IE/Edge
-                }}
+                className="flex-1 overflow-y-auto scrollbar-hide py-2"
+                style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
               >
-                {tasks?.map((task) => (
-                  <div
-                    key={task.TaskId}
-                    className="p-4 border-b border-gray-800/30 hover:bg-gray-900/30 transition-colors group"
-                  >
-                    <div className="flex items-start space-x-3">
-                      <button
-                        onClick={() => completeTask(task.TaskId)}
-                        className="mt-0.5 text-gray-400 hover:text-white transition-colors"
-                      >
-                        {task.status === "DONE" ? (
-                          <CheckCircle className="h-4 w-4 text-green-400" />
-                        ) : task.status === "IN_PROGRESS" ? (
-                          <Clock className="h-4 w-4 text-yellow-400" />
-                        ) : (
-                          <Circle className="h-4 w-4" />
-                        )}
-                      </button>
-                      <div className="flex-1">
-                        <div
-                          className={`text-sm font-normal ${
-                            task.status === "DONE"
-                              ? "text-gray-500"
-                              : "text-gray-200"
-                          } capitalize`}
-                        >
-                          {task.title}
-                        </div>
-                        <div className="flex items-center space-x-2 mt-1">
-                          {task.assignee ? (
-                            <span
-                              onClick={() => assignTask(task.TaskId)}
-                              className="text-xs text-gray-400 flex items-center cursor-pointer hover:text-white transition-colors"
-                            >
-                              <User className="h-3 w-3 mr-1" />
-                              {task.assignee.username}
-                            </span>
-                          ) : (
-                            <Button
-                              onClick={() => assignTask(task.TaskId)}
-                              variant="ghost"
-                              size="sm"
-                              className="text-xs text-gray-500 hover:text-white transition-colors p-0 h-auto font-normal opacity-0 group-hover:opacity-100"
-                            >
-                              take task
-                            </Button>
-                          )}
-                          <Badge
-                            className={`text-xs ${
-                              task.priority === "HIGH"
-                                ? "bg-[#9a0000]/20 text-[#9a0000]"
-                                : task.priority === "MEDIUM"
-                                ? "bg-yellow-500/20 text-yellow-400"
-                                : "bg-gray-500/20 text-gray-400"
-                            }`}
-                          >
-                            {task.priority}
-                          </Badge>
-                        </div>
-                      </div>
+                {tasks?.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full text-center p-4">
+                    <div className="flex items-center justify-center w-16 h-16 rounded-full bg-[#161616] mb-4 border border-dashed border-gray-600">
+                      <ClipboardCheck className="w-8 h-8 text-gray-500" />
                     </div>
+                    <h3 className="text-xl font-darker font-bold text-gray-200 mb-1">
+                      All Tasks Completed
+                    </h3>
+                    <p className="text-gray-400 font-primary text-sm max-w-xs">
+                      Add a new task above to get your project moving.
+                    </p>
                   </div>
-                ))}
+                ) : (
+                  <div className="space-y-2">
+                    {tasks?.map((task) => (
+                      <motion.div
+                        key={task.TaskId}
+                        layout
+                        initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ duration: 0.3, ease: "easeOut" }}
+                        whileHover={
+                          task.status === "DONE"
+                            ? {}
+                            : {
+                                backgroundColor: "#1a1a1a",
+                                borderColor: "#444",
+                                boxShadow: "0 4px 15px -2px rgba(0, 0, 0, 0.4)",
+                              }
+                        }
+                        className={`p-3 rounded-lg bg-[#202020] transition-all border border-gray-700 hover:border-gray-600 relative pl-10 mx-2 group ${
+                          task.status === "DONE"
+                            ? "pointer-events-none"
+                            : "hover:border-gray-600"
+                        }`}
+                      >
+                        {/* Status Indicator (Top Aligned) */}
+                        <motion.button
+                          onClick={() => completeTask(task.TaskId)}
+                          className="absolute left-3 top-[13px] flex items-center justify-center w-5 h-5 rounded-full border-2 transition-all duration-200"
+                          whileHover={{ scale: 1.15 }}
+                          whileTap={{ scale: 0.95 }}
+                          style={{
+                            backgroundColor:
+                              task.status === "DONE" ? "#11b74e" : "#202020",
+                            borderColor:
+                              task.status === "IN_PROGRESS"
+                                ? "#f59e0b"
+                                : task.status === "DONE"
+                                ? "#11b74e"
+                                : "#6b7280",
+                          }}
+                        >
+                          {task.status === "DONE" && (
+                            <Check className="h-3 w-3 text-white" />
+                          )}
+                          {task.status === "IN_PROGRESS" && (
+                            <Clock className="h-3 w-3 text-yellow-400" />
+                          )}
+                          {task.status === "TODO" && (
+                            <Circle className="h-2 w-2 text-gray-500" />
+                          )}
+                        </motion.button>
+
+                        <div className="flex flex-col h-full justify-between ml-2">
+                          {/* Top Section: Title & Description */}
+                          <div>
+                            <p
+                              className={`text-gray-200 text-sm font-primary group-hover:text-white transition-colors ${
+                                task.status === "DONE" ? "opacity-50" : ""
+                              }`}
+                            >
+                              {task.title}
+                            </p>
+                            {task.description && (
+                              <p
+                                className={`text-xs text-gray-400 mt-1 font-primary ${
+                                  task.status === "DONE" ? "opacity-50" : ""
+                                }`}
+                              >
+                                {task.description}
+                              </p>
+                            )}
+                          </div>
+
+                          {/* Bottom Section: Assignee & Priority */}
+                          <div className="flex items-center justify-between mt-3">
+                            {task.assignee ? (
+                              <div
+                                onClick={() => assignTask(task.TaskId)}
+                                className={`text-xs text-gray-400 flex items-center gap-1.5 cursor-pointer hover:text-white transition-colors ${
+                                  task.status === "DONE" ? "opacity-50" : ""
+                                }`}
+                              >
+                                <User className="h-3.5 w-3.5" />
+                                <span
+                                  className={`font-primary capitalize ${
+                                    task.status === "DONE" ? "opacity-50" : ""
+                                  }`}
+                                >
+                                  {task.assignee.username}
+                                </span>
+                              </div>
+                            ) : (
+                              <Button
+                                onClick={() => assignTask(task.TaskId)}
+                                variant="ghost"
+                                size="sm"
+                                className="text-xs text-gray-400 h-auto px-2 py-1 hover:text-white transition-colors font-primary hover:bg-gray-700/50"
+                              >
+                                Assign to me
+                              </Button>
+                            )}
+                            <Badge
+                              variant="outline"
+                              className={`text-xs font-semibold px-2 py-0.5 border-dashed ${
+                                task.priority === "HIGH"
+                                  ? "border-red-500/50 text-red-500 bg-red-500/10"
+                                  : task.priority === "MEDIUM"
+                                  ? "border-yellow-500/50 text-yellow-400 bg-yellow-500/10"
+                                  : "border-gray-500/50 text-gray-400 bg-gray-500/10"
+                              } ${task.status === "DONE" ? "opacity-50" : ""}`}
+                            >
+                              {task.priority}
+                            </Badge>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Scroll Indicator for Tasks */}
-              {taskCanScroll && taskScrollPosition === 0 && (
-                <motion.div
-                  className="absolute bottom-4 right-4 w-8 h-8 bg-gray-800/80 rounded-full flex items-center justify-center backdrop-blur-sm border border-gray-700/50"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 1.2 }}
-                >
+              {taskCanScroll &&
+                taskScrollPosition === 0 &&
+                tasks.length > 0 && (
                   <motion.div
-                    animate={{ y: [0, 2, 0] }}
-                    transition={{
-                      duration: 1.5,
-                      repeat: Number.POSITIVE_INFINITY,
-                      ease: "easeInOut",
-                    }}
+                    className="absolute bottom-4 right-4 w-8 h-8 bg-gray-800/80 rounded-full flex items-center justify-center backdrop-blur-sm border border-gray-700/50"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
                   >
-                    <ChevronDown className="h-4 w-4 text-gray-400" />
+                    <motion.div
+                      animate={{ y: [0, 3, 0] }}
+                      transition={{
+                        duration: 1.5,
+                        repeat: Number.POSITIVE_INFINITY,
+                        ease: "easeInOut",
+                      }}
+                    >
+                      <ChevronDown className="h-4 w-4 text-gray-400" />
+                    </motion.div>
                   </motion.div>
-                </motion.div>
-              )}
+                )}
             </div>
           </motion.div>
         </div>

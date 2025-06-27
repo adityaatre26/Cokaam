@@ -40,6 +40,8 @@ export async function POST(req: Request) {
       {
         projectId: result.projectId,
         taskId: result.TaskId,
+        UserId: user.UserId,
+        assignee: user.username,
       }
     );
 

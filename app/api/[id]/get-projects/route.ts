@@ -97,11 +97,6 @@ export async function GET(
           },
         },
         task: {
-          where: {
-            status: {
-              notIn: ["DONE"],
-            },
-          },
           select: {
             TaskId: true,
             title: true,
