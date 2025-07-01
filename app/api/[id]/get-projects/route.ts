@@ -162,7 +162,7 @@ export async function GET(
         updatedAt: task.updatedAt,
         assignee: task.assignee
           ? {
-              id: task.assignee.UserId,
+              UserId: task.assignee.UserId,
               username: task.assignee.username,
             }
           : null,
