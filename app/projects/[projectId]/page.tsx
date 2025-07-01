@@ -19,7 +19,6 @@ import {
   Code,
   // GitPullRequest,
   ChevronDown,
-  Github,
   GitCommit,
   Check,
   ClipboardCheck,
@@ -63,6 +62,10 @@ export default function ProjectDetail({ params }: { params }) {
   const [tasks, setTasks] = useState<TaskInterface[]>([]);
   const [commit, setCommits] = useState<CommitInterface[]>([]);
   const { data, isLoading } = useProject(unwrappedParams.projectId);
+
+  const [isAddingTask, setIsAddingTask] = useState<boolean>(false);
+  const [isAssigningTask, setIsAssigningTask] = useState<string | null>(null);
+  const [isCompletingTask, setIsCompletingTask] = useState<string | null>(null);
 
   const sortedTasks = (tasksTosSort: TaskInterface[]) => {
     return [...tasksTosSort].sort((a, b) => {
@@ -244,6 +247,7 @@ export default function ProjectDetail({ params }: { params }) {
           "Sending request to ",
           `/api/projects/${project?.projectId}/add-task`
         );
+        setIsAddingTask(true);
         const response = await axios.post(
           `/api/projects/${project?.projectId}/add-task`,
           {
@@ -266,6 +270,8 @@ export default function ProjectDetail({ params }: { params }) {
       }
     } catch (error) {
       console.error("Error adding task:", error);
+    } finally {
+      setIsAddingTask(false);
     }
   };
 
@@ -286,6 +292,7 @@ export default function ProjectDetail({ params }: { params }) {
 
       console.log(user?.id, taskId);
 
+      setIsAssigningTask(taskId);
       const response = await axios.post(
         `/api/projects/${project?.projectId}/assign-task`,
         {
@@ -297,6 +304,8 @@ export default function ProjectDetail({ params }: { params }) {
       console.log(response);
     } catch (error) {
       console.error("Error assigning task:", error);
+    } finally {
+      setIsAssigningTask(null);
     }
   };
 
@@ -309,6 +318,7 @@ export default function ProjectDetail({ params }: { params }) {
 
       // console.log(taskId, user?.id);
 
+      setIsCompletingTask(taskId);
       const result = await axios.post(
         `/api/projects/${unwrappedParams.projectId}/complete-task`,
         {
@@ -320,6 +330,8 @@ export default function ProjectDetail({ params }: { params }) {
       console.log("Updated successfully", result.data);
     } catch (error) {
       console.log("Error completing task:", error);
+    } finally {
+      setIsCompletingTask(null);
     }
   };
 
@@ -606,10 +618,17 @@ export default function ProjectDetail({ params }: { params }) {
                   />
                   <Button
                     onClick={addTask}
+                    disabled={isAddingTask}
                     size="icon"
-                    className="bg-[#0a0a0a] hover:bg-[#e0e0e0] group border-1 border-gray-700/60 rounded-full text-white font-normal transition-all duration-300 flex-shrink-0"
+                    className="bg-[#0a0a0a] hover:bg-[#e0e0e0] group border-1 border-gray-700/60 rounded-full text-white font-normal transition-all duration-300 flex-shrink-0 disabled:opacity-70 disabled:cursor-not-allowed"
                   >
-                    <Plus className="h-4 w-4 group-hover:text-black group-hover:rotate-90 transition-all duration-300 ease-out" />
+                    <Plus
+                      className={`h-4 w-4 group-hover:text-black transition-all duration-300 ease-out ${
+                        isAddingTask
+                          ? "animate-spin text-gray-400"
+                          : " group-hover:rotate-90"
+                      }`}
+                    />
                   </Button>
                 </div>
 
@@ -714,14 +733,29 @@ export default function ProjectDetail({ params }: { params }) {
                         {/* Status Indicator (Top Aligned) */}
                         <motion.button
                           onClick={() => completeTask(task.TaskId)}
-                          className="absolute left-3 top-[13px] flex items-center justify-center w-5 h-5 rounded-full border-2 transition-all duration-200"
-                          whileHover={{ scale: 1.15 }}
-                          whileTap={{ scale: 0.95 }}
+                          disabled={isCompletingTask === task.TaskId}
+                          className={`absolute left-3 top-[13px] flex items-center justify-center w-5 h-5 rounded-full border-2 transition-all duration-200 disabled:cursor-not-allowed ${
+                            isCompletingTask === task.TaskId
+                              ? "animate-pulse"
+                              : ""
+                          }`}
+                          whileHover={
+                            isCompletingTask === task.TaskId
+                              ? {}
+                              : { scale: 1.15 }
+                          }
+                          whileTap={
+                            isCompletingTask === task.TaskId
+                              ? {}
+                              : { scale: 0.95 }
+                          }
                           style={{
                             backgroundColor:
                               task.status === "DONE" ? "#11b74e" : "#202020",
                             borderColor:
-                              task.status === "IN_PROGRESS"
+                              isCompletingTask === task.TaskId
+                                ? "#f59e0b"
+                                : task.status === "IN_PROGRESS"
                                 ? "#f59e0b"
                                 : task.status === "DONE"
                                 ? "#11b74e"
@@ -767,23 +801,39 @@ export default function ProjectDetail({ params }: { params }) {
                                 onClick={() => assignTask(task.TaskId)}
                                 className={`text-xs text-gray-400 flex items-center gap-1.5 cursor-pointer hover:text-white transition-colors ${
                                   task.status === "DONE" ? "opacity-50" : ""
+                                } ${
+                                  isAssigningTask === task.TaskId
+                                    ? "pointer-events-none"
+                                    : ""
                                 }`}
                               >
                                 <User className="h-3.5 w-3.5" />
+
                                 <span
                                   className={`font-primary capitalize ${
                                     task.status === "DONE" ? "opacity-50" : ""
+                                  } ${
+                                    isAssigningTask === task.TaskId
+                                      ? "opacity-70"
+                                      : ""
                                   }`}
                                 >
-                                  {task.assignee.username}
+                                  {isAssigningTask === task.TaskId
+                                    ? "Updating..."
+                                    : task.assignee.username}
                                 </span>
                               </div>
                             ) : (
                               <Button
                                 onClick={() => assignTask(task.TaskId)}
+                                disabled={isAssigningTask === task.TaskId}
                                 variant="ghost"
                                 size="sm"
-                                className="text-xs text-gray-400 h-auto px-2 py-1 hover:text-white transition-colors font-primary hover:bg-gray-700/50"
+                                className={`text-xs text-gray-400 h-auto px-2 py-1 hover:text-white transition-colors font-primary hover:bg-gray-700/50 disabled:opacity-70 disabled:cursor-not-allowed ${
+                                  isAssigningTask === task.TaskId
+                                    ? "animate-pulse"
+                                    : ""
+                                }`}
                               >
                                 Assign to me
                               </Button>
