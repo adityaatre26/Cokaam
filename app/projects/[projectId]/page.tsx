@@ -17,7 +17,6 @@ import {
   Settings,
   ArrowLeft,
   Code,
-  // GitPullRequest,
   ChevronDown,
   GitCommit,
   Check,
@@ -38,7 +37,9 @@ import { useUser } from "@/contexts/UserContext";
 import { useProject } from "@/hooks/useProject";
 import LoadingScreen from "@/components/LoadingPage";
 import { AnimatedLink } from "@/components/AnimatedLink";
-// import { useProject } from "@/contexts/ProjectContext";
+import { sanitizeInput, validateRequired } from "@/utils/validation";
+import ErrorToast from "@/components/ErrorToast";
+import { useErrorHandler } from "@/hooks/useErrorHandler";
 
 interface paramInterface {
   projectId: string;
@@ -46,7 +47,6 @@ interface paramInterface {
 export default function ProjectDetail({ params }: { params }) {
   // Unwrap params using React.use()
   const { user, isAuthenticated } = useUser();
-  // const { setProjectData } = useProject();
   const unwrappedParams: paramInterface = React.use(params);
   const [newTask, setNewTask] = useState("");
   const [taskDescription, setTaskDescription] = useState("");
@@ -66,6 +66,8 @@ export default function ProjectDetail({ params }: { params }) {
   const [isAddingTask, setIsAddingTask] = useState<boolean>(false);
   const [isAssigningTask, setIsAssigningTask] = useState<string | null>(null);
   const [isCompletingTask, setIsCompletingTask] = useState<string | null>(null);
+
+  const { error, handleApiError, hideError, showError } = useErrorHandler();
 
   const sortedTasks = (tasksTosSort: TaskInterface[]) => {
     return [...tasksTosSort].sort((a, b) => {
@@ -232,46 +234,67 @@ export default function ProjectDetail({ params }: { params }) {
     };
   }, [commit, tasks]);
 
+  const validateForm = () => {
+    const titleError = validateRequired(newTask, "Task title");
+    if (titleError) {
+      showError(titleError, "validation");
+      return false;
+    }
+
+    return true;
+  };
+
+  const resetForm = () => {
+    setNewTask("");
+    setTaskDescription("");
+    setTaskPriority("MEDIUM");
+    hideError();
+  };
+
   const addTask = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
     try {
-      if (newTask.trim()) {
-        if (user === null) {
-          console.error("User is not authenticated");
-          return;
+      if (user === null) {
+        console.error("User is not authenticated");
+        return;
+      }
+      if (!project) {
+        console.error("Project is not loaded");
+        return;
+      }
+      console.log(
+        "Sending request to ",
+        `/api/projects/${project?.projectId}/add-task`
+      );
+      setIsAddingTask(true);
+      const response = await axios.post(
+        `/api/projects/${project?.projectId}/add-task`,
+        {
+          title: sanitizeInput(newTask),
+          description: sanitizeInput(taskDescription),
+          priority: taskPriority,
+          UserId: user?.id,
         }
-        if (!project) {
-          console.error("Project is not loaded");
-          return;
-        }
-        console.log(
-          "Sending request to ",
-          `/api/projects/${project?.projectId}/add-task`
-        );
-        setIsAddingTask(true);
-        const response = await axios.post(
-          `/api/projects/${project?.projectId}/add-task`,
-          {
-            title: newTask,
-            description: taskDescription,
-            priority: taskPriority,
-            UserId: user?.id,
-          }
-        );
+      );
 
-        if (response.data.status === "success") {
-          // Reset form
-          setNewTask("");
-          setTaskDescription("");
-          setTaskPriority("MEDIUM");
+      if (response.data.status === "success") {
+        // Reset form
+        setNewTask("");
+        setTaskDescription("");
+        setTaskPriority("MEDIUM");
 
-          // Update tasks list
-          setTasks((prevTasks) => [...prevTasks, response.data.data]);
-        }
+        // Update tasks list
+        setTasks((prevTasks) => [...prevTasks, response.data.data]);
       }
     } catch (error) {
       console.error("Error adding task:", error);
+      handleApiError(error);
     } finally {
       setIsAddingTask(false);
+      resetForm();
     }
   };
 
@@ -922,6 +945,13 @@ export default function ProjectDetail({ params }: { params }) {
           </div>
         </motion.div>
       </div>
+
+      <ErrorToast
+        message={error.message}
+        type={error.type}
+        isVisible={error.isVisible}
+        onClose={hideError}
+      />
     </div>
   );
 }
