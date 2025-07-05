@@ -146,7 +146,15 @@ export default function LandingPage() {
               }}
             >
               <div className="w-full h-full rounded-4xl bg-black">
-                {/* Hello */}
+                <video
+                  className="h-full w-full object-cover rounded-4xl"
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                >
+                  <source src="/dashboard.webm" type="video/webm" />
+                </video>
               </div>
             </div>
           </div>
