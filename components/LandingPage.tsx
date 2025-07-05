@@ -48,7 +48,7 @@ export default function LandingPage() {
             >
               <div className="w-7 h-7 bg-[#780000] rounded-md" />
               <span className="text-lg font-extralight tracking-wider font-darker text-gray-200">
-                flow
+                Cokaam
               </span>
             </motion.div>
 
@@ -260,12 +260,12 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="relative w-full h-[30vh] bg-none overflow-hidden mt-16">
+      <footer className="relative w-full h-[60vh] bg-none overflow-hidden mt-16">
         {/* Overlay */}
         <div className="absolute inset-0 z-10 bg-gradient-to-t from-black to-transparent" />
 
         {/* Brand Name */}
-        <h1 className="absolute bottom-0 left-1/2 -translate-x-1/2 text-[19vw] font-primary font-bold tracking-tighter scale-y-90 scale-x-90 text-white opacity-50 z-0 leading-none select-none -my-8">
+        <h1 className="absolute bottom-0 left-1/2 -translate-x-1/2 text-[25.5vw] font-primary font-bold tracking-tighter scale-y-90 scale-x-90 text-white opacity-50 z-0 leading-none select-none -my-8">
           COKAAM
         </h1>
       </footer>

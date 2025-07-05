@@ -205,7 +205,7 @@ export default function ProjectSettings() {
               <Link href="/dashboard" className="flex items-center space-x-3">
                 <div className="w-7 h-7 bg-[#780000] rounded-md"></div>
                 <span className="text-lg font-extralight tracking-wider">
-                  flow
+                  Cokaam
                 </span>
               </Link>
               <span className="text-gray-600">/</span>

@@ -180,7 +180,7 @@ export default function Dashboard() {
               <div className="w-7 h-7 bg-[#780000] rounded-md" />
               <Link href="/" className="flex items-center space-x-3">
                 <span className="text-lg font-extralight tracking-wider font-darker text-gray-200">
-                  flow
+                  Cokaam
                 </span>
               </Link>
             </motion.div>

@@ -396,7 +396,7 @@ export default function ProjectDetail({ params }: { params }) {
               <div className="w-7 h-7 bg-[#780000] rounded-md" />
               <Link href="/dashboard" className="flex items-center space-x-3">
                 <span className="text-lg font-extralight tracking-wider font-darker text-gray-200">
-                  flow
+                  Cokaam
                 </span>
               </Link>
               <span className="text-gray-600">/</span>

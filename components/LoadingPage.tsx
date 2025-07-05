@@ -29,7 +29,7 @@ export default function LoadingScreen() {
             }}
           />
           <span className="text-2xl font-extralight tracking-wider font-darker text-gray-200">
-            flow
+            Cokaam
           </span>
         </motion.div>
 
