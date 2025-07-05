@@ -147,7 +147,7 @@ export default function LandingPage() {
             >
               <div className="w-full h-full rounded-4xl bg-black">
                 <video
-                  className="h-full w-full object-cover rounded-4xl"
+                  className="h-full w-full object-cover rounded-4xl opacity-75"
                   autoPlay
                   loop
                   muted
