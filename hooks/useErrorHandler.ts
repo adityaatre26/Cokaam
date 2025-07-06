@@ -35,11 +35,12 @@ export const useErrorHandler = () => {
       if (error.response) {
         const status = error.response.status;
         const data = error.response.data;
+        const errorMessage = data.error || data.message || "An error occurred";
 
         switch (status) {
           case 400:
             showError(
-              data.message || "Invalid request. Check your input.",
+              errorMessage || "Invalid request. Check your input.",
               "validation"
             );
             break;
@@ -53,10 +54,7 @@ export const useErrorHandler = () => {
             showError("You don't have permission to do that.", "permission");
             break;
           case 404:
-            showError(
-              "Resource not found. It might have been deleted.",
-              "server"
-            );
+            showError("Not found", "server");
             break;
 
           case 500:

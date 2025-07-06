@@ -59,6 +59,14 @@ const addMember = async ({ projectId, userId, email }: AddMemberParams) => {
     userId,
     email: email.trim(),
   });
+
+  // Check if API returned error in response body
+  if (response.data.status === "error") {
+    const error = new Error(response.data.error || "Failed to add member");
+    error.response = { data: response.data, status: response.status };
+    throw error;
+  }
+
   return response.data;
 };
 
@@ -76,6 +84,14 @@ const removeMember = async ({
       },
     }
   );
+
+  // Check if API returned error in response body
+  if (response.data.status === "error") {
+    const error = new Error(response.data.error || "Failed to remove member");
+    error.response = { data: response.data, status: response.status };
+    throw error;
+  }
+
   return response.data;
 };
 
@@ -88,6 +104,16 @@ const updateRepository = async ({
     newUrl,
     UserId: userId,
   });
+
+  // Check if API returned error in response body
+  if (response.data.status === "error") {
+    const error = new Error(
+      response.data.error || "Failed to update repository"
+    );
+    error.response = { data: response.data, status: response.status };
+    throw error;
+  }
+
   return response.data;
 };
 
@@ -107,6 +133,13 @@ const updateProject = async ({
     }
   );
 
+  // Check if API returned error in response body
+  if (response.data.status === "error") {
+    const error = new Error(response.data.error || "Failed to update project");
+    error.response = { data: response.data, status: response.status };
+    throw error;
+  }
+
   return response.data;
 };
 
@@ -120,6 +153,13 @@ const deleteProject = async ({ projectId, userId }: DeleteProjectParams) => {
       },
     }
   );
+
+  // Check if API returned error in response body
+  if (response.data.status === "error") {
+    const error = new Error(response.data.error || "Failed to delete project");
+    error.response = { data: response.data, status: response.status };
+    throw error;
+  }
 
   return response.data;
 };
@@ -217,28 +257,25 @@ export const useProject = (projectId: string) => {
     isLoading: projectQuery.isLoading,
     error: projectQuery.error,
 
-    // Mutations
-    addMember: addMemberMutation.mutate,
-    addMemberAsync: addMemberMutation.mutateAsync,
+    // Mutations - Use mutateAsync for async operations that need error handling
+    addMember: addMemberMutation.mutateAsync,
     isAddingMember: addMemberMutation.isPending,
     addMemberError: addMemberMutation.error,
 
-    removeMember: removeMemberMutation.mutate,
-    removeMemberAsync: removeMemberMutation.mutateAsync,
+    removeMember: removeMemberMutation.mutateAsync,
     isRemovingMember: removeMemberMutation.isPending,
     removeMemberError: removeMemberMutation.error,
 
-    updateRepo: updateRepoMutation.mutate,
-    updateRepoAsync: updateRepoMutation.mutateAsync,
+    updateRepo: updateRepoMutation.mutateAsync,
     isUpdatingRepo: updateRepoMutation.isPending,
     updateRepoError: updateRepoMutation.error,
 
-    updateProject: updateProjectMutation.mutate,
+    updateProject: updateProjectMutation.mutateAsync,
     isProjectUpdating: updateProjectMutation.isPending,
     updateProjectError: updateProjectMutation.error,
 
-    deleteProject: deleteProjectMutation.mutate,
-    deleteProjectUpdating: updateProjectMutation.isPending,
-    deleteProjectError: updateProjectMutation.error,
+    deleteProject: deleteProjectMutation.mutateAsync,
+    deleteProjectUpdating: deleteProjectMutation.isPending,
+    deleteProjectError: deleteProjectMutation.error,
   };
 };

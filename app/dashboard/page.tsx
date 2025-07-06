@@ -265,14 +265,14 @@ export default function Dashboard() {
               </DialogTrigger>
               <DialogContent className="bg-[#0c0c0c] backdrop-blur-md p-6 rounded-lg border border-gray-600">
                 <DialogHeader>
-                  <DialogTitle className="text-2xl font-extralight text-white">
+                  <DialogTitle className="text-4xl font-darker text-white">
                     Create New Project
                   </DialogTitle>
                 </DialogHeader>
                 <div className="mb-2">
                   <Label
                     htmlFor="project-name"
-                    className="text-sm font-normal text-gray-300"
+                    className="text-sm font-primary text-gray-300"
                   >
                     Project Name
                   </Label>
@@ -288,7 +288,7 @@ export default function Dashboard() {
                 <div className="mb-2">
                   <Label
                     htmlFor="repo-url"
-                    className="text-sm font-normal text-gray-300"
+                    className="text-sm font-primary text-gray-300"
                   >
                     Repository URL
                   </Label>
@@ -304,7 +304,7 @@ export default function Dashboard() {
                 <div className="mb-2">
                   <Label
                     htmlFor="description"
-                    className="text-sm font-normal text-gray-300"
+                    className="text-sm font-primary text-gray-300"
                   >
                     Description
                   </Label>

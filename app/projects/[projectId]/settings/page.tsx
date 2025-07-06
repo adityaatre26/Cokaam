@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 
 // Custom Hooks & Context
 import { useProject } from "@/hooks/useProject";
+import { useErrorHandler } from "@/hooks/useErrorHandler";
 
 // UI Components
 import { Button } from "@/components/ui/button";
@@ -33,21 +34,30 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import ErrorToast from "@/components/ErrorToast";
 
 // Icons
 import {
-  Settings,
   ArrowLeft,
   Trash2,
   UserMinus,
-  GitBranch,
   AlertTriangle,
   ExternalLink,
   Plus,
   Mail,
   Loader2,
+  SettingsIcon,
 } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
+
+// Validation utilities
+import {
+  sanitizeInput,
+  validateGithubUrl,
+  validateLength,
+  validateRequired,
+  validateEmail,
+} from "@/utils/validation";
 
 export default function ProjectSettings() {
   const params = useParams();
@@ -61,20 +71,28 @@ export default function ProjectSettings() {
     error,
     addMember,
     isAddingMember,
-    addMemberError,
+
     removeMember,
     isRemovingMember,
-    removeMemberError,
+
     updateRepo,
     isUpdatingRepo,
-    updateRepoError,
+
     updateProject,
     isProjectUpdating,
-    updateProjectError,
+
     deleteProject,
-    deleteProjectError,
+
     deleteProjectUpdating,
   } = useProject(projectId);
+
+  // Error handler hook
+  const {
+    error: validationError,
+    handleApiError,
+    hideError,
+    showError,
+  } = useErrorHandler();
 
   const [projectName, setProjectName] = useState("");
   const [repositoryUrl, setRepositoryUrl] = useState("");
@@ -89,27 +107,90 @@ export default function ProjectSettings() {
     }
   }, [data]);
 
+  // Validation functions
+  const validateProjectName = (name: string) => {
+    const requiredError = validateRequired(name, "Project name");
+    if (requiredError) {
+      showError(requiredError, "validation");
+      return false;
+    }
+
+    const lengthError = validateLength(name, 3, 50, "Project name");
+    if (lengthError) {
+      showError(lengthError, "validation");
+      return false;
+    }
+
+    return true;
+  };
+
+  const validateRepositoryUrl = (url: string) => {
+    const repoError = validateGithubUrl(url);
+    if (repoError) {
+      showError(repoError, "validation");
+      return false;
+    }
+
+    // Additional GitHub URL validation
+    const githubUrlPattern =
+      /^https:\/\/github\.com\/[a-zA-Z0-9._-]+\/[a-zA-Z0-9._-]+\/?$/;
+    if (!githubUrlPattern.test(url)) {
+      showError(
+        "GitHub URL must be in format: https://github.com/username/reponame",
+        "validation"
+      );
+      return false;
+    }
+
+    return true;
+  };
+
+  const validateMemberEmail = (email: string) => {
+    const requiredError = validateRequired(email, "Email");
+    if (requiredError) {
+      showError(requiredError, "validation");
+      return false;
+    }
+
+    const emailError = validateEmail(email);
+    if (emailError) {
+      showError(emailError, "validation");
+      return false;
+    }
+
+    return true;
+  };
+
   const handleRepoChange = async (newRepoUrl: string) => {
     if (!user?.id) {
-      console.log("User not authenticated");
+      showError("User not authenticated", "validation");
       return;
     }
 
-    updateRepo({
-      projectId,
-      newUrl: newRepoUrl,
-      userId: user.id,
-    });
+    if (!validateRepositoryUrl(newRepoUrl)) {
+      return;
+    }
+
+    try {
+      await updateRepo({
+        projectId,
+        newUrl: sanitizeInput(newRepoUrl),
+        userId: user.id,
+      });
+    } catch (error) {
+      console.error("Failed to update repository:", error);
+      handleApiError(error);
+      // showError("Repo updation error", "server");
+    }
   };
 
   const handleAddMember = async () => {
     if (!user?.id) {
-      console.log("User not authenticated");
+      showError("User not authenticated", "validation");
       return;
     }
 
-    if (!memberEmail.trim()) {
-      console.log("Email is required");
+    if (!validateMemberEmail(memberEmail)) {
       return;
     }
 
@@ -117,54 +198,94 @@ export default function ProjectSettings() {
       await addMember({
         projectId,
         userId: user.id,
-        email: memberEmail.trim(),
+        email: sanitizeInput(memberEmail.trim()),
       });
 
       // Reset form and close dialog on success
       setMemberEmail("");
       setIsInviteDialogOpen(false);
+      hideError();
     } catch (error) {
       console.error("Failed to add member:", error);
+      handleApiError(error);
     }
   };
 
   const handleRemoveMember = async (userTBD: string) => {
     if (!user?.id) {
-      console.log("User not authenticated");
+      showError("User not authenticated", "validation");
       return;
     }
 
-    removeMember({
-      projectId,
-      userId: user.id,
-      memberToRemoveId: userTBD,
-    });
+    try {
+      await removeMember({
+        projectId,
+        userId: user.id,
+        memberToRemoveId: userTBD,
+      });
+
+      hideError();
+    } catch (error) {
+      console.error("Failed to remove member:", error);
+      handleApiError(error);
+    }
   };
 
   const handleProjectChange = async (
     newName: string | "",
     description: string | ""
   ) => {
-    updateProject({
-      projectId,
-      userId: user!.id,
-      newName,
-      description,
-    });
+    if (!user?.id) {
+      showError("User not authenticated", "validation");
+      return;
+    }
+
+    if (!validateProjectName(newName)) {
+      return;
+    }
+
+    try {
+      await updateProject({
+        projectId,
+        userId: user.id,
+        newName: sanitizeInput(newName),
+        description: sanitizeInput(description),
+      });
+
+      hideError();
+    } catch (error) {
+      console.error("Failed to update project:", error);
+      handleApiError(error);
+    }
   };
 
   const handleDeleteProject = async () => {
     if (!user?.id) {
-      console.log("User not authenticated");
+      showError("User not authenticated", "validation");
       return;
     }
 
-    await deleteProject({
-      projectId,
-      userId: user.id,
-    });
+    try {
+      await deleteProject({
+        projectId,
+        userId: user.id,
+      });
 
-    await deleteProjectContext(projectId);
+      await deleteProjectContext(projectId);
+      hideError();
+    } catch (error) {
+      console.error("Failed to delete project:", error);
+      handleApiError(error);
+    }
+  };
+
+  // Reset validation errors when dialog closes
+  const handleInviteDialogClose = (open: boolean) => {
+    setIsInviteDialogOpen(open);
+    if (!open) {
+      setMemberEmail("");
+      hideError();
+    }
   };
 
   // Loading and error states
@@ -198,35 +319,41 @@ export default function ProjectSettings() {
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Navigation */}
-      <nav className="border-b border-gray-900/30 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-8">
+      <nav className="border-b border-b-gray-500 border-dashed backdrop-blur-md sticky top-0 z-50 rounded-b-3xl">
+        <div className="max-w-6xl mx-auto px-4">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
+            {/* Logo */}
+            <motion.div
+              className="flex-1 flex items-center space-x-3"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6 }}
+            >
+              <div className="w-7 h-7 bg-[#780000] rounded-md" />
               <Link href="/dashboard" className="flex items-center space-x-3">
-                <div className="w-7 h-7 bg-[#780000] rounded-md"></div>
-                <span className="text-lg font-extralight tracking-wider">
+                <span className="text-lg font-extralight tracking-wider font-darker text-gray-200">
                   Cokaam
                 </span>
               </Link>
               <span className="text-gray-600">/</span>
               <Link
                 href={`/projects/${projectId}`}
-                className="text-gray-300 hover:text-white transition-colors"
+                className="text-gray-300 hover:text-white transition-colors mt-0.5"
               >
-                <span className="font-normal text-sm capitalize">
+                <span className="text-gray-300 font-primary text-sm capitalize">
                   {projectName}
                 </span>
               </Link>
               <span className="text-gray-600">/</span>
-              <span className="text-gray-300 font-normal text-sm">
+              <span className="text-gray-300 font-primary text-sm mt-1">
                 settings
               </span>
-            </div>
+            </motion.div>
           </div>
         </div>
       </nav>
 
-      <div className="max-w-4xl mx-auto px-8 py-12">
+      <div className="max-w-5xl mx-auto px-8 py-12">
         {/* Header */}
         <motion.div
           className="mb-12"
@@ -235,79 +362,78 @@ export default function ProjectSettings() {
           transition={{ duration: 0.6 }}
         >
           <div className="flex items-center mb-6">
-            <Link
-              href={`/projects/${projectId}`}
-              className="text-gray-300 hover:text-white transition-colors mr-4 flex items-center"
+            <motion.div
+              whileHover={{ x: -4, scale: 1.04, color: "#fff" }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
             >
-              <ArrowLeft className="h-4 w-4 mr-1" />
-              back to project
-            </Link>
+              <Link
+                href="/dashboard"
+                className="text-gray-300 hover:text-white transition-colors mr-4 flex items-center font-primary"
+              >
+                <ArrowLeft className="h-4 w-4 mr-1" />
+                back to dashboard
+              </Link>
+            </motion.div>
           </div>
-          <h1 className="text-4xl md:text-5xl font-extralight tracking-tight mb-4 flex items-center">
-            <Settings className="h-8 w-8 mr-4" />
+          <SettingsIcon className="transition-all duration-150 ease-out hover:rotate-90" />
+          <h1 className="text-4xl md:text-7xl font-darker font-medium tracking-tight mb-0.5 capitalize">
             Project Settings
           </h1>
-          <p className="text-gray-300 font-normal">
-            manage project configuration and team access
+          <p className="text-gray-300 font-primary mb-6 ml-2">
+            Manage project configuration and team access
           </p>
         </motion.div>
 
-        <div className="space-y-8">
-          {/* Error Messages */}
-          {(addMemberError ||
-            removeMemberError ||
-            updateRepoError ||
-            updateProjectError ||
-            deleteProjectError) && (
-            <div className="bg-red-950/20 border border-red-900/30 rounded-lg p-4">
-              <div className="flex items-center">
-                <AlertTriangle className="h-4 w-4 text-red-400 mr-2" />
-                <span className="text-red-400 text-sm">
-                  {addMemberError && "Failed to add member. "}
-                  {removeMemberError && "Failed to remove member. "}
-                  {updateRepoError && "Failed to update repository. "}
-                  Please try again.
-                </span>
-              </div>
-            </div>
-          )}
-
+        <div className="space-y-6">
           {/* General Settings */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            <div className="bg-gray-950/50 border border-gray-800/30 rounded-lg p-6">
-              <h2 className="text-xl font-extralight mb-6">General</h2>
-              <div className="space-y-6">
-                <div>
-                  <Label
-                    htmlFor="project-name"
-                    className="text-sm text-gray-300 font-normal mb-2 block"
+            <div className="bg-[#0c0c0c] border border-gray-600 border-dashed rounded-lg p-6">
+              <h2 className="text-4xl font-darker font-semibold mb-5">
+                General
+              </h2>
+              <div className="mb-5 mt-2">
+                <Label
+                  htmlFor="project-name"
+                  className="text-md text-gray-300 font-primary mb-2 block"
+                >
+                  Project Name
+                </Label>
+                <div className="flex space-x-2 items-center">
+                  <Input
+                    id="project-name"
+                    value={projectName}
+                    onChange={(e) => {
+                      setProjectName(e.target.value);
+                      // Clear validation errors when user starts typing
+                      if (validationError.isVisible) {
+                        hideError();
+                      }
+                    }}
+                    className={`bg-[#161616] border-gray-800/30 text-gray-200 font-primary focus:border-gray-700 transition-all duration-200 ease-out ${
+                      projectName !== data.projectInfo.name
+                        ? "flex-1"
+                        : "flex-1"
+                    }`}
+                    disabled={isProjectUpdating}
+                  />
+                  <div
+                    className={`transition-all duration-200 ease-out overflow-hidden ${
+                      projectName !== data.projectInfo.name
+                        ? "w-14 opacity-100"
+                        : "w-0 opacity-0"
+                    }`}
                   >
-                    Project Name
-                  </Label>
-                  <div className="flex space-x-2">
-                    <Input
-                      id="project-name"
-                      value={projectName}
-                      onChange={(e) => setProjectName(e.target.value)}
-                      className="bg-gray-900/50 border-gray-800/30 text-gray-200 font-normal focus:border-gray-700"
-                    />
                     <Button
                       variant="outline"
-                      style={{
-                        visibility:
-                          projectName !== data.projectInfo.name
-                            ? "visible"
-                            : "hidden",
-                      }}
                       onClick={() => handleProjectChange(projectName, "")}
-                      className="border-gray-800 text-gray-300 hover:text-white hover:border-gray-700 transition-colors"
+                      className=" h-10 w-10 p-0 rounded-full bg-[#161616] transition-all duration-150 ease-out border-gray-600 border-dashed hover:border-black"
                       disabled={isProjectUpdating}
                     >
-                      {isUpdatingRepo ? (
+                      {isProjectUpdating ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
                         <ExternalLink className="h-4 w-4" />
@@ -315,32 +441,45 @@ export default function ProjectSettings() {
                     </Button>
                   </div>
                 </div>
-                <div>
-                  <Label
-                    htmlFor="repository-url"
-                    className="text-sm text-gray-300 font-normal mb-2 block"
+              </div>
+              <div className="mb-3">
+                <Label
+                  htmlFor="repository-url"
+                  className="text-md text-gray-300 font-primary mb-2 block"
+                >
+                  Repository URL
+                </Label>
+                <div className="flex space-x-2 items-center">
+                  <Input
+                    id="repository-url"
+                    value={repositoryUrl}
+                    onChange={(e) => {
+                      setRepositoryUrl(e.target.value);
+                      // Clear validation errors when user starts typing
+                      if (validationError.isVisible) {
+                        hideError();
+                      }
+                    }}
+                    className={`bg-[#161616] border-gray-800/30 text-gray-200 font-primary focus:border-gray-700 transition-all duration-200 ease-out ${
+                      repositoryUrl !== data.projectInfo.repoUrl
+                        ? "flex-1"
+                        : "flex-1"
+                    }`}
+                    disabled={isUpdatingRepo}
+                  />
+
+                  <div
+                    className={`transition-all duration-200 ease-out overflow-hidden ${
+                      repositoryUrl !== data.projectInfo.repoUrl
+                        ? "w-14 opacity-100"
+                        : "w-0 opacity-0"
+                    }`}
                   >
-                    Repository URL
-                  </Label>
-                  <div className="flex space-x-2">
-                    <Input
-                      id="repository-url"
-                      value={repositoryUrl}
-                      onChange={(e) => setRepositoryUrl(e.target.value)}
-                      className="bg-gray-900/50 border-gray-800/30 text-gray-200 font-normal focus:border-gray-700"
-                      disabled={isUpdatingRepo}
-                    />
                     <Button
                       variant="outline"
-                      style={{
-                        visibility:
-                          repositoryUrl !== data.projectInfo.repoUrl
-                            ? "visible"
-                            : "hidden",
-                      }}
                       onClick={() => handleRepoChange(repositoryUrl)}
+                      className=" h-10 w-10 p-0 rounded-full bg-[#161616] transition-all duration-150 ease-out border-gray-600 border-dashed hover:border-black"
                       disabled={isUpdatingRepo}
-                      className="border-gray-800 text-gray-300 hover:text-white hover:border-gray-700 transition-colors"
                     >
                       {isUpdatingRepo ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -349,11 +488,11 @@ export default function ProjectSettings() {
                       )}
                     </Button>
                   </div>
-                  <p className="text-xs text-gray-500 mt-2">
-                    changing the repository will update all connected
-                    integrations
-                  </p>
                 </div>
+                <p className="text-sm text-gray-500 font-primary ml-3">
+                  *changing the repository will update all connected
+                  integrations
+                </p>
               </div>
             </div>
           </motion.div>
@@ -364,138 +503,151 @@ export default function ProjectSettings() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
           >
-            <div className="bg-gray-950/50 border border-gray-800/30 rounded-lg p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-extralight flex items-center">
-                  <GitBranch className="h-5 w-5 mr-2" />
+            <div className="bg-[#0c0c0c] border border-gray-600 border-dashed rounded-lg p-6">
+              <h2 className="text-4xl font-darker font-semibold mb-5">Team</h2>
+              <div className="mb-5 mt-2">
+                <Label className="text-md text-gray-300 font-primary block">
                   Team Members
-                </h2>
-                <Dialog
-                  open={isInviteDialogOpen}
-                  onOpenChange={setIsInviteDialogOpen}
-                >
-                  <DialogTrigger asChild>
-                    <Button
-                      className="bg-[#00607a] hover:bg-[#007a9a] text-white font-normal transition-all duration-300 hover:px-6"
-                      disabled={isAddingMember}
-                    >
-                      {isAddingMember ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <Plus className="h-4 w-4 mr-2" />
-                      )}
-                      add member
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="bg-gray-950 border-gray-800 text-white">
-                    <DialogHeader>
-                      <DialogTitle className="text-xl font-extralight flex items-center">
-                        <Mail className="h-5 w-5 mr-2" />
-                        Add Team Member
-                      </DialogTitle>
-                      <DialogDescription className="text-gray-300">
-                        Enter the email address of the person you`d like to
-                        invite to this project.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div>
-                        <Label
-                          htmlFor="member-email"
-                          className="text-sm text-gray-300 font-normal mb-2 block"
-                        >
-                          Email Address
-                        </Label>
-                        <Input
-                          id="member-email"
-                          type="email"
-                          placeholder="colleague@company.com"
-                          value={memberEmail}
-                          onChange={(e) => setMemberEmail(e.target.value)}
-                          className="bg-gray-900/50 border-gray-800/30 text-gray-200 font-normal focus:border-gray-700"
-                          onKeyDown={(e) =>
-                            e.key === "Enter" &&
-                            !isAddingMember &&
-                            handleAddMember()
-                          }
-                          disabled={isAddingMember}
-                        />
-                      </div>
-                    </div>
-                    <DialogFooter>
+                </Label>
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-sm text-gray-500 font-primary">
+                    Manage project collaborators and permissions
+                  </p>
+                  <Dialog
+                    open={isInviteDialogOpen}
+                    onOpenChange={handleInviteDialogClose}
+                  >
+                    <DialogTrigger asChild>
                       <Button
                         variant="outline"
-                        onClick={() => setIsInviteDialogOpen(false)}
-                        className="border-gray-800 text-gray-300 hover:text-white hover:border-gray-700 transition-colors"
+                        className="bg-[#161616] border-gray-600 border-dashed cursor-pointer hover:border-black text-gray-300 hover:text-black transition-all duration-150 ease-out font-primary"
                         disabled={isAddingMember}
                       >
-                        Cancel
-                      </Button>
-                      <Button
-                        onClick={handleAddMember}
-                        className="bg-[#00607a] hover:bg-[#007a9a] text-white font-normal transition-all duration-300 hover:px-6"
-                        disabled={isAddingMember || !memberEmail.trim()}
-                      >
                         {isAddingMember ? (
-                          <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Sending...
-                          </>
-                        ) : (
-                          "Send Invitation"
-                        )}
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-              </div>
-              <div className="space-y-4">
-                {members.filter(Boolean).map((member) => (
-                  <div
-                    key={member.userId}
-                    className="flex items-center justify-between p-4 bg-gray-900/30 rounded-lg hover:bg-gray-900/50 transition-colors"
-                  >
-                    <div className="flex items-center space-x-4">
-                      <div className="w-10 h-10 bg-gray-900/50 rounded-full flex items-center justify-center relative">
-                        <span className="text-sm font-normal text-gray-200">
-                          {member.username.substring(0, 2).toUpperCase()}
-                        </span>
-                      </div>
-                      <div>
-                        <div className="text-sm font-normal text-gray-200 capitalize flex items-center space-x-2">
-                          <span>{member.username}</span>
-                          {member.role === "OWNER" && (
-                            <Badge className="bg-[#00607a]/20 text-[#00607a] text-xs">
-                              owner
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="text-xs text-gray-400">
-                          {member.role}
-                        </div>
-                      </div>
-                    </div>
-                    {member.role !== "OWNER" && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-                        onClick={() => handleRemoveMember(member.userId)}
-                        disabled={isRemovingMember}
-                      >
-                        {isRemovingMember ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (
-                          <UserMinus className="h-4 w-4" />
+                          <Plus className="h-4 w-4 " />
                         )}
+                        add member
                       </Button>
-                    )}
-                  </div>
-                ))}
+                    </DialogTrigger>
+                    <DialogContent className="bg-[#0c0c0c] border border-gray-600 border-dashed text-white">
+                      <DialogHeader>
+                        <DialogTitle className="text-xl font-darker font-semibold flex items-center">
+                          <Mail className="h-5 w-5 mr-2" />
+                          Add Team Member
+                        </DialogTitle>
+                        <DialogDescription className="text-gray-300 font-primary">
+                          Enter the email address of the person you'd like to
+                          invite to this project.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <Label
+                            htmlFor="member-email"
+                            className="text-md text-gray-300 font-primary mb-2 block"
+                          >
+                            Email Address
+                          </Label>
+                          <Input
+                            id="member-email"
+                            type="email"
+                            placeholder="colleague@company.com"
+                            value={memberEmail}
+                            onChange={(e) => {
+                              setMemberEmail(e.target.value);
+                              // Clear validation errors when user starts typing
+                              if (validationError.isVisible) {
+                                hideError();
+                              }
+                            }}
+                            className="bg-[#161616] border-gray-800/30 text-gray-200 font-primary focus:border-gray-700"
+                            onKeyDown={(e) =>
+                              e.key === "Enter" &&
+                              !isAddingMember &&
+                              handleAddMember()
+                            }
+                            disabled={isAddingMember}
+                          />
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button
+                          variant="outline"
+                          onClick={() => handleInviteDialogClose(false)}
+                          className="bg-[#161616] border-gray-600 border-dashed cursor-pointer hover:border-black text-gray-300 hover:text-black transition-all duration-150 ease-out font-primary"
+                          disabled={isAddingMember}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          onClick={handleAddMember}
+                          variant="outline"
+                          className="bg-[#161616] border-gray-600 border-dashed cursor-pointer hover:border-black text-gray-300 hover:text-black transition-all duration-150 ease-out font-primary"
+                          disabled={isAddingMember || !memberEmail.trim()}
+                        >
+                          {isAddingMember ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Sending...
+                            </>
+                          ) : (
+                            "Send Invitation"
+                          )}
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+                <div className="space-y-3">
+                  {members.filter(Boolean).map((member) => (
+                    <div
+                      key={member.userId}
+                      className="flex items-center justify-between p-4 bg-[#161616] border border-gray-800/30 rounded-lg hover:border-gray-700 transition-all duration-200 ease-out"
+                    >
+                      <div className="flex items-center space-x-4">
+                        <div className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center">
+                          <span className="text-sm font-primary text-gray-200">
+                            {member.username.substring(0, 2).toUpperCase()}
+                          </span>
+                        </div>
+                        <div>
+                          <div className="text-sm font-primary text-gray-200 capitalize flex items-center space-x-2">
+                            <span>{member.username}</span>
+                            {member.role === "OWNER" && (
+                              <Badge className="bg-gray-700 text-gray-300 text-xs border-gray-600">
+                                owner
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="text-xs text-gray-500 font-primary">
+                            {member.role}
+                          </div>
+                        </div>
+                      </div>
+                      {member.role !== "OWNER" && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="bg-[#161616] border-gray-600 border-dashed hover:border-black text-gray-400 hover:text-black transition-all duration-150 ease-out"
+                          onClick={() => handleRemoveMember(member.userId)}
+                          disabled={isRemovingMember}
+                        >
+                          {isRemovingMember ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <UserMinus className="h-4 w-4" />
+                          )}
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <p className="text-sm text-gray-500 font-primary ml-3 mt-3">
+                  *removed members will lose access to this project immediately
+                </p>
               </div>
-              <p className="text-xs text-gray-500 mt-4">
-                removed members will lose access to this project immediately
-              </p>
             </div>
           </motion.div>
 
@@ -505,20 +657,22 @@ export default function ProjectSettings() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.4 }}
           >
-            <div className="bg-gray-950/50 border border-red-900/30 rounded-lg p-6">
-              <h2 className="text-xl font-extralight mb-6 flex items-center text-red-400">
-                <AlertTriangle className="h-5 w-5 mr-2" />
+            <div className="bg-[#0c0c0c] border border-gray-600 border-dashed rounded-lg p-6">
+              <h2 className="text-4xl font-darker font-semibold mb-5 text-red-300">
                 Danger Zone
               </h2>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-red-950/20 border border-red-900/30 rounded-lg">
+              <div className="mb-5 mt-2">
+                <Label className="text-md text-gray-300 font-primary mb-2 block">
+                  Delete Project
+                </Label>
+                <div className="flex items-center justify-between p-4 bg-red-950/10 border border-red-900/20 rounded-lg">
                   <div>
-                    <h3 className="text-sm font-normal text-gray-200 mb-1">
-                      Delete Project
+                    <h3 className="text-sm font-primary text-gray-200 mb-1">
+                      Permanently delete this project
                     </h3>
-                    <p className="text-xs text-gray-400">
-                      permanently delete this project and all associated data.
-                      this action cannot be undone.
+                    <p className="text-sm text-gray-500 font-primary">
+                      This will permanently delete all associated data. This
+                      action cannot be undone.
                     </p>
                   </div>
                   <AlertDialog>
@@ -526,23 +680,23 @@ export default function ProjectSettings() {
                       <Button
                         variant="outline"
                         disabled={deleteProjectUpdating}
-                        className="border-red-800 text-red-400 hover:bg-red-500/10 hover:text-red-300 hover:border-red-700 transition-colors"
+                        className="bg-red-950/20 border-red-900/30 border-dashed cursor-pointer hover:border-red-800/50 text-red-400 hover:bg-red-300 hover:text-red-800 transition-all duration-150 ease-out font-primary"
                       >
                         {deleteProjectUpdating ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (
-                          <Trash2 className="h-4 w-4 mr-2" />
+                          <Trash2 className="h-4 w-4" />
                         )}
                         delete project
                       </Button>
                     </AlertDialogTrigger>
-                    <AlertDialogContent className="bg-gray-950 border-red-900/30 text-white">
+                    <AlertDialogContent className="bg-[#0c0c0c] border border-gray-600 border-dashed text-white">
                       <AlertDialogHeader>
-                        <AlertDialogTitle className="text-xl font-extralight flex items-center text-red-400">
+                        <AlertDialogTitle className="text-xl font-darker font-semibold flex items-center text-red-300">
                           <AlertTriangle className="h-5 w-5 mr-2" />
                           Delete Project
                         </AlertDialogTitle>
-                        <AlertDialogDescription className="text-gray-300">
+                        <AlertDialogDescription className="text-gray-300 font-primary">
                           Are you absolutely sure you want to delete the{" "}
                           <strong className="text-red-300">
                             {projectName}
@@ -558,12 +712,12 @@ export default function ProjectSettings() {
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
-                        <AlertDialogCancel className="bg-gray-900 border-gray-800 text-gray-300 hover:bg-gray-800 hover:text-white">
+                        <AlertDialogCancel className="bg-[#161616] border-gray-600 border-dashed cursor-pointer hover:border-black text-gray-300 transition-all duration-150 ease-out font-primary">
                           Cancel
                         </AlertDialogCancel>
                         <AlertDialogAction
                           onClick={handleDeleteProject}
-                          className="bg-red-600 hover:bg-red-700 text-white font-normal transition-all duration-300"
+                          className="bg-red-950/20 border-red-900/30 border-dashed cursor-pointer hover:border-red-800/50 text-red-400 hover:bg-red-300 hover:text-red-800 transition-all duration-150 ease-out font-primary"
                         >
                           Yes, Delete Project
                         </AlertDialogAction>
@@ -576,6 +730,14 @@ export default function ProjectSettings() {
           </motion.div>
         </div>
       </div>
+
+      {/* Error Toast */}
+      <ErrorToast
+        message={validationError.message}
+        type={validationError.type}
+        isVisible={validationError.isVisible}
+        onClose={hideError}
+      />
     </div>
   );
 }

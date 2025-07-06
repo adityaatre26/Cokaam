@@ -60,8 +60,6 @@ export default function LandingPage() {
               transition={{ duration: 0.6, delay: 0.2 }}
             >
               <AnimatedLink href="#features" title="features" />
-              <AnimatedLink href="#about" title="about" />
-
               {/* Auth Area */}
               {isLoading ? (
                 <div className="flex items-center gap-2">
@@ -147,7 +145,7 @@ export default function LandingPage() {
             >
               <div className="w-full h-full rounded-4xl bg-black">
                 <video
-                  className="h-full w-full object-cover rounded-4xl opacity-75"
+                  className="h-full w-full object-cover rounded-4xl opacity-85"
                   autoPlay
                   loop
                   muted
@@ -160,9 +158,10 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+      <div className="h-18" id="features" />
 
       {/* Features Section 25degs 29degs -20degs */}
-      <section id="features">
+      <section>
         <section className="max-w-5xl mx-auto px-4">
           <h2 className="text-5xl font-bold mb-10 font-darker">
             JUST THE GOOD STUFF

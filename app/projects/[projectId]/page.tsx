@@ -21,6 +21,7 @@ import {
   GitCommit,
   Check,
   ClipboardCheck,
+  UserRound,
 } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -914,29 +915,25 @@ export default function ProjectDetail({ params }: { params }) {
           transition={{ duration: 0.6, delay: 0.4 }}
           className="mb-8"
         >
-          <div className="mb-6 flex items-center justify-between">
-            <h2 className="text-2xl font-extralight flex items-center">
-              <Users className="h-5 w-5 mr-2" />
-              Team Members
-            </h2>
+          <div className="mb-6 flex items-center">
+            <Users className="h-6 w-6 mr-2 mt-2" />
+            <h2 className="text-3xl font-darker ">Team Members</h2>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-4">
             {members.map((member) => (
               <div
                 key={member.userId}
-                className="bg-gray-950/50 border border-gray-800/30 rounded-lg p-4 hover:bg-gray-900/30 transition-all duration-300"
+                className="bg-[#111111] border border-gray-700 border-dashed rounded-lg p-4 hover:bg-gray-900/30 transition-all duration-300"
               >
                 <div className="flex flex-col items-center text-center">
-                  <div className="w-16 h-16 bg-gray-900/50 rounded-full flex items-center justify-center mb-3 relative">
-                    <span className="text-xl font-normal text-gray-200">
-                      PP
-                    </span>
+                  <div className="w-16 h-16  rounded-full flex items-center justify-center relative">
+                    <UserRound className="h-10 w-10 font-normal text-gray-200" />
                   </div>
-                  <div className="text-sm font-normal text-gray-200 capitalize">
+                  <div className="text-md font-primary text-gray-200">
                     {member.username}
                   </div>
-                  <div className="text-xs text-gray-400 mt-1">
+                  <div className="text-md text-gray-400 mt-1 font-darker font-semibold tracking-wide">
                     {member.role}
                   </div>
                 </div>
