@@ -34,7 +34,7 @@ export default function LandingPage() {
     return <LoadingScreen />;
   }
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen text-white">
       {/* Navigation */}
       <nav className="border-b border-b-gray-500 border-dashed backdrop-blur-md sticky top-0 z-50 rounded-b-3xl">
         <div className="max-w-6xl mx-auto px-4">
@@ -106,11 +106,10 @@ export default function LandingPage() {
 
       {/* Hero Section */}
       <section className="relative overflow-hidden">
-        {/* <div className="absolute inset-0 bg-gradient-to-br from-[#780000]/3 to-[#00607a]/3"></div> */}
-        <div className="relative max-w-5xl mx-auto pt-24 pb-25">
+        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-16 lg:pt-24 pb-16 sm:pb-20 lg:pb-25">
           <div className="text-left">
             <motion.h1
-              className="text-6xl md:text-7xl font-darker font-bold tracking-tight leading-none scale-y-90 scale-x-90 origin-left"
+              className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-darker font-bold tracking-tight leading-none scale-y-90 scale-x-90 origin-left"
               initial={{ opacity: 0, filter: "blur(10px)", y: 30 }}
               animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
               transition={{ duration: 1.2, ease: "easeOut" }}
@@ -119,13 +118,14 @@ export default function LandingPage() {
             </motion.h1>
 
             <motion.p
-              className="font-primary text-md text-gray-400 font-normal leading-relaxed mb-16 max-w-2xl"
+              className="font-primary text-sm sm:text-base md:text-md text-gray-400 font-normal leading-relaxed mb-8 sm:mb-12 lg:mb-16 max-w-xl sm:max-w-2xl"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.6 }}
             >
               Project management without the bloat. Paste repo url, add members,
-              and get real-time project tracking in under 5 minutes. <br />
+              and get real-time project tracking in under 5 minutes.{" "}
+              <br className="hidden sm:block" />
               While others make you configure, we make it work.
             </motion.p>
           </div>
@@ -133,19 +133,19 @@ export default function LandingPage() {
           <div className="relative">
             {/* Background glow only behind this block */}
             <div className="absolute inset-0 flex justify-center items-center pointer-events-none z-0">
-              <div className="w-[75%] h-[500px] bg-white rounded-3xl blur-[80px] opacity-[0.17]" />
+              <div className="w-[75%] h-[300px] sm:h-[400px] lg:h-[500px] bg-white rounded-3xl blur-[60px] sm:blur-[80px] opacity-[0.17]" />
             </div>
 
             <div
-              className="relative z-10 w-full h-[500px] rounded-4xl p-[1px]"
+              className="relative z-10 w-full h-[300px] sm:h-[400px] lg:h-[500px] rounded-2xl sm:rounded-3xl lg:rounded-4xl p-[1px]"
               style={{
                 backgroundImage:
                   "linear-gradient(85deg, #7B7B80 0%, rgba(8,9,10,0) 65%)",
               }}
             >
-              <div className="w-full h-full rounded-4xl bg-black">
+              <div className="w-full h-full rounded-2xl sm:rounded-3xl lg:rounded-4xl bg-black">
                 <video
-                  className="h-full w-full object-cover rounded-4xl opacity-85"
+                  className="h-full w-full object-cover rounded-2xl sm:rounded-3xl lg:rounded-4xl opacity-85"
                   autoPlay
                   loop
                   muted
@@ -158,75 +158,75 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
-      <div className="h-18" id="features" />
+      <div className="h-12 sm:h-18" id="features" />
 
-      {/* Features Section 25degs 29degs -20degs */}
+      {/* Features Section */}
       <section>
-        <section className="max-w-5xl mx-auto px-4">
-          <h2 className="text-5xl font-bold mb-10 font-darker">
+        <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6 sm:mb-8 lg:mb-10 font-darker">
             JUST THE GOOD STUFF
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 auto-rows-[minmax(120px,_auto)]">
-            <div className="bg-[#08090a] rounded-xl p-6 row-span-2 border-dashed border-gray-500 border-1 relative overflow-hidden group">
-              <h3 className="text-3xl font-semibold mb-2 font-darker transition-all duration-300 ease-out group-hover:text-2xl">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-1 auto-rows-[minmax(120px,_auto)]">
+            <div className="bg-[#08090a] rounded-xl p-4 sm:p-6 lg:row-span-2 border-dashed border-gray-500 border-1 relative overflow-hidden group">
+              <h3 className="text-xl sm:text-2xl lg:text-3xl font-semibold mb-2 font-darker transition-all duration-300 ease-out group-hover:text-lg sm:group-hover:text-xl lg:group-hover:text-2xl">
                 GitHub Integration
               </h3>
-              <p className="text-gray-400 font-primary transition-all duration-300 ease-out group-hover:text-sm">
+              <p className="text-sm sm:text-base text-gray-400 font-primary transition-all duration-300 ease-out group-hover:text-xs sm:group-hover:text-sm">
                 Paste a repo URL and get going. Setup? Already done.
               </p>
 
-              <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-11/12 h-3/5 bg-[08090a] border-1 border-gray-500 border-dashed rounded-t-lg opacity-0 blur-lg translate-y-full transition-all duration-300 ease-out group-hover:translate-y-0 group-hover:opacity-70 group-hover:blur-none pt-4 px-3">
-                <div className="text-sm font-primary text-gray-400 space-y-1">
-                  <Github className="w-8 h-8 mb-2" />
+              <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-11/12 h-3/5 bg-[08090a] border-1 border-gray-500 border-dashed rounded-t-lg opacity-0 blur-lg translate-y-full transition-all duration-300 ease-out group-hover:translate-y-0 group-hover:opacity-70 group-hover:blur-none pt-3 sm:pt-4 px-2 sm:px-3">
+                <div className="text-xs sm:text-sm font-primary text-gray-400 space-y-1">
+                  <Github className="w-6 h-6 sm:w-8 sm:h-8 mb-2" />
                   <div>
                     No need to leave the app, just enter the repo url and the
-                    webhook will be autmatically configured with the website.{" "}
+                    webhook will be automatically configured with the website.
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="bg-[#140e0ec2] rounded-xl p-6 border-dashed border-gray-500 border-1">
-              <h3 className="text-3xl font-semibold mb-2 font-darker">
+            <div className="bg-[#140e0ec2] rounded-xl p-4 sm:p-6 border-dashed border-gray-500 border-1">
+              <h3 className="text-xl sm:text-2xl lg:text-3xl font-semibold mb-2 font-darker">
                 Live Feed
               </h3>
-              <p className="text-gray-400 font-primary">
+              <p className="text-sm sm:text-base text-gray-400 font-primary">
                 Commits, pushes, merges—automatically shown live.
               </p>
             </div>
-            {/* 3. Member Management (Small box) */}
-            <div className="bg-[#08090a] rounded-xl p-6 row-span-2 border-dashed border-gray-500 border-1 relative overflow-hidden group">
-              <h3 className="text-3xl font-semibold mb-2 font-darker transition-all duration-300 ease-out group-hover:text-2xl">
+
+            <div className="bg-[#08090a] rounded-xl p-4 sm:p-6 lg:row-span-2 border-dashed border-gray-500 border-1 relative overflow-hidden group">
+              <h3 className="text-xl sm:text-2xl lg:text-3xl font-semibold mb-2 font-darker transition-all duration-300 ease-out group-hover:text-lg sm:group-hover:text-xl lg:group-hover:text-2xl">
                 Project Members
               </h3>
-              <p className="text-gray-400 font-primary transition-all duration-300 ease-out group-hover:text-sm">
+              <p className="text-sm sm:text-base text-gray-400 font-primary transition-all duration-300 ease-out group-hover:text-xs sm:group-hover:text-sm">
                 Add, remove, and collaborate with your team seamlessly.
               </p>
-              <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-11/12 h-3/5 bg-[08090a] border-1 border-gray-500 border-dashed rounded-t-lg opacity-0 blur-lg translate-y-full transition-all duration-300 ease-out group-hover:translate-y-0 group-hover:opacity-70 group-hover:blur-none pt-4 px-3">
-                <div className="text-sm font-primary text-gray-400 space-y-1">
-                  <UserRoundCheck className="w-8 h-8 mb-2" />
+              <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-11/12 h-3/5 bg-[08090a] border-1 border-gray-500 border-dashed rounded-t-lg opacity-0 blur-lg translate-y-full transition-all duration-300 ease-out group-hover:translate-y-0 group-hover:opacity-70 group-hover:blur-none pt-3 sm:pt-4 px-2 sm:px-3">
+                <div className="text-xs sm:text-sm font-primary text-gray-400 space-y-1">
+                  <UserRoundCheck className="w-6 h-6 sm:w-8 sm:h-8 mb-2" />
                   <div>
                     Simply enter the email of an authenticated user, add them to
-                    your project and start giving out tasks.{" "}
+                    your project and start giving out tasks.
                   </div>
                 </div>
               </div>
             </div>
-            {/* 4. Commit → Task Completion (Medium box) */}
-            <div className="bg-[#140e0ec2] rounded-xl p-6 row-span-1 border-dashed border-gray-500 border-1 ">
-              <h3 className="text-3xl font-semibold mb-2 font-darker">
+
+            <div className="bg-[#140e0ec2] rounded-xl p-4 sm:p-6 lg:row-span-1 border-dashed border-gray-500 border-1">
+              <h3 className="text-xl sm:text-2xl lg:text-3xl font-semibold mb-2 font-darker">
                 Auto Task Completion
               </h3>
-              <p className="text-gray-400 font-primary ">
+              <p className="text-sm sm:text-base text-gray-400 font-primary">
                 Mark tasks as done by just committing the task title.
               </p>
             </div>
-            {/* 5. Commit → Task Assignment (Full Width) */}
-            <div className="bg-[#08090a] rounded-xl p-6 col-span-1 sm:col-span-2 border-dashed border-gray-500 border-1">
-              <h3 className="text-3xl font-semibold mb-2 font-darker">
+
+            <div className="bg-[#08090a] rounded-xl p-4 sm:p-6 col-span-1 lg:col-span-2 border-dashed border-gray-500 border-1">
+              <h3 className="text-xl sm:text-2xl lg:text-3xl font-semibold mb-2 font-darker">
                 Smart Assignment
               </h3>
-              <p className="text-gray-400 font-primary">
+              <p className="text-sm sm:text-base text-gray-400 font-primary">
                 Commits auto-assign tasks to the right person—no manual tracking
                 required.
               </p>

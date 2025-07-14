@@ -58,6 +58,7 @@ import {
   validateRequired,
   validateEmail,
 } from "@/utils/validation";
+import LoadingScreen from "@/components/LoadingPage";
 
 export default function ProjectSettings() {
   const params = useParams();
@@ -290,12 +291,7 @@ export default function ProjectSettings() {
 
   // Loading and error states
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-black text-white">
-        <Loader2 className="h-6 w-6 animate-spin mr-2" />
-        Loading project settings...
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   if (error) {
@@ -317,7 +313,7 @@ export default function ProjectSettings() {
   const members = data.members || [];
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen text-white">
       {/* Navigation */}
       <nav className="border-b border-b-gray-500 border-dashed backdrop-blur-md sticky top-0 z-50 rounded-b-3xl">
         <div className="max-w-6xl mx-auto px-4">

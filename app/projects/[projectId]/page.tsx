@@ -382,7 +382,7 @@ export default function ProjectDetail({ params }: { params }) {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen text-white">
       {/* Navigation */}
       <nav className="border-b border-b-gray-500 border-dashed backdrop-blur-md sticky top-0 z-50 rounded-b-3xl">
         <div className="max-w-6xl mx-auto px-4">

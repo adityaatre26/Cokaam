@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Providers from "./providers";
 import { Toaster } from "@/components/ui/sonner";
+import Squares from "@/src/blocks/Backgrounds/Squares/Squares";
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -18,7 +19,18 @@ export default function RootLayout({
       <body
       // className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Providers>{children}</Providers>
+        <div className="fixed inset-0 z-0 pointer-events-none">
+          <Squares
+            speed={0.08}
+            squareSize={32}
+            direction="up"
+            borderColor="#FFFFFF13"
+            hoverFillColor="#fff"
+          />
+        </div>
+        <div className="relative z-10">
+          <Providers>{children}</Providers>
+        </div>
         <Toaster />
       </body>
     </html>
